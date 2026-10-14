@@ -696,7 +696,7 @@ Address P0 items before any deployment. P1 items are required to match the speci
 - [x] **4.3** Add held-out abstention cases or document that the reported abstention accuracy is in-sample (V3).
 - [x] **4.4** Charge each model-fallback attempt against the daily LLM budget (V4).
 - [x] **4.5** Decide whether `GEMINI.md` / `.gemini/` are committed or ignored (V5).
-- [ ] **4.6** Make the first commit and push so CI and the keep-alive workflow actually run (V6).
+- [x] **4.6** Make the first commit and push so CI and the keep-alive workflow actually run (V6).
 
 ---
 
