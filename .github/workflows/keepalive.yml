@@ -1,0 +1,36 @@
+name: Supabase and Backend Keepalive
+
+on:
+  schedule:
+    # Run every Monday and Thursday at 06:00 UTC to prevent free-tier project pause
+    - cron: "0 6 * * 1,4"
+  workflow_dispatch:
+
+jobs:
+  ping-services:
+    name: Keepalive Ping for Supabase and Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Keepalive Ping to Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -n "$SUPABASE_URL" ]; then
+            echo "Sending keepalive request to Supabase REST endpoint..."
+            curl -s -f -H "apikey: $SUPABASE_ANON_KEY" "$SUPABASE_URL/rest/v1/" || echo "Supabase ping completed"
+          else
+            echo "SUPABASE_URL secret is not configured; skipping Supabase keepalive ping."
+          fi
+
+      - name: Send Keepalive Ping to Backend
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+        run: |
+          if [ -n "$BACKEND_URL" ]; then
+            echo "Sending keepalive request to Backend health probe..."
+            curl -s -f "$BACKEND_URL/api/v1/health/ready" || echo "Backend ping completed"
+          else
+            echo "BACKEND_URL secret is not configured; skipping backend keepalive ping."
+          fi
+

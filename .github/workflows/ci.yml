@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-checks:
+    name: Backend Lint, Test & Evaluation
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "./backend[dev]"
+
+      - name: Cache FastEmbed Model Cache
+        uses: actions/cache@v4
+        id: cache-fastembed
+        with:
+          path: .fastembed_cache
+          key: fastembed-${{ runner.os }}-bge-small-en-v1.5
+
+      - name: Pre-download FastEmbed Model Weights
+        if: steps.cache-fastembed.outputs.cache-hit != 'true'
+        run: |
+          python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='BAAI/bge-small-en-v1.5', cache_dir='.fastembed_cache')"
+
+      - name: Apply database migrations
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d postgres -f supabase/migrations/0001_extensions_and_schema.sql
+          PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d postgres -f supabase/migrations/0002_indexes_and_search.sql
+          PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d postgres -f supabase/migrations/0003_storage_policies.sql
+
+      - name: Check code formatting and linting (ruff)
+        run: |
+          ruff check backend evaluation
+          ruff format --check backend evaluation
+
+      - name: Run backend unit and integration tests
+        env:
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/postgres
+          ENVIRONMENT: test
+          ALLOW_TEST_TOKENS: "true"
+        run: |
+          pytest backend/tests
+
+      - name: Run retrieval evaluation benchmark
+        env:
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/postgres
+          ENVIRONMENT: test
+          ALLOW_TEST_TOKENS: "true"
+        run: |
+          python evaluation/run_retrieval_eval.py
+
+  frontend-checks:
+    name: Frontend Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Type-check frontend code
+        working-directory: frontend
+        run: npx tsc --noEmit
+
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm test
+
+      - name: Lint frontend code
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Build frontend application
+        working-directory: frontend
+        run: npm run build
+
+      - name: Verify bundle security (no server secrets in dist)
+        working-directory: frontend
+        run: |
+          ! grep -rn "sk-or-v1" dist/
+          ! grep -rn "service_role" dist/

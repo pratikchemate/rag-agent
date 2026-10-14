@@ -1,0 +1,129 @@
+{
+  "timestamp": "2026-10-14T13:06:14.258842+00:00",
+  "corpus_doc_count": 4,
+  "tuning_dataset_count": 35,
+  "held_out_dataset_count": 10,
+  "modes": {
+    "vector": {
+      "recall_at_1": 0.9423,
+      "recall_at_3": 0.9808,
+      "recall_at_5": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.5256,
+      "mrr": 1.0,
+      "abstention_accuracy": 0.9143,
+      "false_abstention_rate": 0.0769,
+      "latency_p50_ms": 14.43,
+      "latency_p95_ms": 20.13,
+      "latency_mean_ms": 14.67
+    },
+    "keyword": {
+      "recall_at_1": 0.9423,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.6154,
+      "mrr": 0.9762,
+      "abstention_accuracy": 0.9714,
+      "false_abstention_rate": 0.0385,
+      "latency_p50_ms": 1.4,
+      "latency_p95_ms": 2.69,
+      "latency_mean_ms": 1.53
+    },
+    "hybrid_rrf": {
+      "recall_at_1": 0.9423,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.5513,
+      "mrr": 0.9821,
+      "abstention_accuracy": 1.0,
+      "false_abstention_rate": 0.0,
+      "latency_p50_ms": 15.44,
+      "latency_p95_ms": 19.49,
+      "latency_mean_ms": 16.08
+    }
+  },
+  "tuning_modes": {
+    "vector": {
+      "recall_at_1": 0.9423,
+      "recall_at_3": 0.9808,
+      "recall_at_5": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.5256,
+      "mrr": 1.0,
+      "abstention_accuracy": 0.9143,
+      "false_abstention_rate": 0.0769,
+      "latency_p50_ms": 14.43,
+      "latency_p95_ms": 20.13,
+      "latency_mean_ms": 14.67
+    },
+    "keyword": {
+      "recall_at_1": 0.9423,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.6154,
+      "mrr": 0.9762,
+      "abstention_accuracy": 0.9714,
+      "false_abstention_rate": 0.0385,
+      "latency_p50_ms": 1.4,
+      "latency_p95_ms": 2.69,
+      "latency_mean_ms": 1.53
+    },
+    "hybrid_rrf": {
+      "recall_at_1": 0.9423,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.5513,
+      "mrr": 0.9821,
+      "abstention_accuracy": 1.0,
+      "false_abstention_rate": 0.0,
+      "latency_p50_ms": 15.44,
+      "latency_p95_ms": 19.49,
+      "latency_mean_ms": 16.08
+    }
+  },
+  "held_out_modes": {
+    "vector": {
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.4667,
+      "mrr": 1.0,
+      "abstention_accuracy": 1.0,
+      "false_abstention_rate": 0.0,
+      "latency_p50_ms": 15.11,
+      "latency_p95_ms": 17.69,
+      "latency_mean_ms": 15.13
+    },
+    "keyword": {
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.5,
+      "mrr": 1.0,
+      "abstention_accuracy": 1.0,
+      "false_abstention_rate": 0.0,
+      "latency_p50_ms": 1.34,
+      "latency_p95_ms": 1.99,
+      "latency_mean_ms": 1.45
+    },
+    "hybrid_rrf": {
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.4667,
+      "mrr": 1.0,
+      "abstention_accuracy": 0.8,
+      "false_abstention_rate": 0.0,
+      "latency_p50_ms": 18.07,
+      "latency_p95_ms": 45.55,
+      "latency_mean_ms": 20.78
+    }
+  }
+}
