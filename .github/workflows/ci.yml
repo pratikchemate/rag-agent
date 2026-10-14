@@ -56,9 +56,9 @@ jobs:
       - name: Apply database migrations
         run: |
           sudo apt-get update && sudo apt-get install -y postgresql-client
-          PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d postgres -f supabase/migrations/0001_extensions_and_schema.sql
-          PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d postgres -f supabase/migrations/0002_indexes_and_search.sql
-          PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d postgres -f supabase/migrations/0003_storage_policies.sql
+          PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f supabase/migrations/0001_extensions_and_schema.sql
+          PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f supabase/migrations/0002_indexes_and_search.sql
+          PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f supabase/migrations/0003_storage_policies.sql
 
       - name: Check code formatting and linting (ruff)
         run: |

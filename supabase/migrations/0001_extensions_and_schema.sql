@@ -1,8 +1,9 @@
 -- 0001_extensions_and_schema.sql
 -- Enables extensions and creates primary tables with Row-Level Security enabled.
 
--- Enable pgvector extension (schema-qualified for Supabase compatibility)
-CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
+-- Enable pgvector extension (compatible with both Supabase and standard PostgreSQL)
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Function and trigger to auto-update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
