@@ -192,8 +192,12 @@ def run_benchmark():
             with open(HELD_OUT_DATASET_PATH, "r", encoding="utf-8") as f:
                 held_out_dataset = json.load(f)
 
-        print(f"Loaded {len(tuning_dataset)} in-sample tuning questions from dataset.json.")
-        print(f"Loaded {len(held_out_dataset)} out-of-sample held-out questions from held_out_dataset.json.")
+        print(
+            f"Loaded {len(tuning_dataset)} in-sample tuning questions from dataset.json."
+        )
+        print(
+            f"Loaded {len(held_out_dataset)} out-of-sample held-out questions from held_out_dataset.json."
+        )
 
         retrieval_svc = get_retrieval_service()
         modes = ["vector", "keyword", "hybrid_rrf"]
@@ -201,12 +205,18 @@ def run_benchmark():
         print("\n--- Evaluating In-Sample Tuning Set (35 cases) ---")
         tuning_modes = evaluate_dataset_split(tuning_dataset, retrieval_svc, db, modes)
         for mode, m in tuning_modes.items():
-            print(f"[{mode}]: Recall@3: {m['recall_at_3']:.3f} | MRR: {m['mrr']:.3f} | Abstention Acc: {m['abstention_accuracy']:.3f} | False Abstention: {m['false_abstention_rate']:.3f}")
+            print(
+                f"[{mode}]: Recall@3: {m['recall_at_3']:.3f} | MRR: {m['mrr']:.3f} | Abstention Acc: {m['abstention_accuracy']:.3f} | False Abstention: {m['false_abstention_rate']:.3f}"
+            )
 
         print("\n--- Evaluating Out-of-Sample Held-Out Set (10 cases) ---")
-        held_out_modes = evaluate_dataset_split(held_out_dataset, retrieval_svc, db, modes)
+        held_out_modes = evaluate_dataset_split(
+            held_out_dataset, retrieval_svc, db, modes
+        )
         for mode, m in held_out_modes.items():
-            print(f"[{mode}]: Recall@3: {m['recall_at_3']:.3f} | MRR: {m['mrr']:.3f} | Abstention Acc: {m['abstention_accuracy']:.3f} | False Abstention: {m['false_abstention_rate']:.3f}")
+            print(
+                f"[{mode}]: Recall@3: {m['recall_at_3']:.3f} | MRR: {m['mrr']:.3f} | Abstention Acc: {m['abstention_accuracy']:.3f} | False Abstention: {m['false_abstention_rate']:.3f}"
+            )
 
         results: dict[str, Any] = {
             "timestamp": datetime.now(UTC).isoformat(),
