@@ -287,7 +287,7 @@ Each item is problem · evidence · fix · verify, the same format as `updates.m
   - [x] 1.4 Python 3.13 / Node 20 pinned
   - [x] 1.5 Keep-alive hardened
   - [x] 1.6 Memory measured under 512 MB
-- [ ] **Phase 2: Supabase** provisioned, RLS verified, bucket, invite-only auth, JWKS, seeded
+- [x] **Phase 2: Supabase** provisioned, RLS verified, bucket, invite-only auth, JWKS, seeded
 - [ ] **Phase 3: Render** deployed, health checks green, test tokens rejected
 - [ ] **Phase 4: Vercel** deployed, no secrets in bundle, CORS and redirect URLs finalized
 - [ ] **Phase 5: GitHub** secrets set, keep-alive run green

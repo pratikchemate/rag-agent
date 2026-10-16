@@ -7,12 +7,15 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Function and trigger to auto-update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
 BEGIN
-    NEW.updated_at = now();
+    NEW.updated_at = pg_catalog.now();
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- 1. documents table
 CREATE TABLE IF NOT EXISTS documents (
