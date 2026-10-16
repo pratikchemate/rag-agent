@@ -9,11 +9,13 @@ from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 from app.api import chat, documents, feedback, health
 from app.core.config import get_settings
 from app.core.errors import AppException
 from app.core.logging import configure_logging, get_logger, request_id_ctx
+from app.db.engine import SessionLocal
 
 settings = get_settings()
 configure_logging(level=settings.LOG_LEVEL)
@@ -22,12 +24,49 @@ logger = get_logger("enterprise_knowledge_ai")
 REQUEST_ID_REGEX = re.compile(r"^[a-zA-Z0-9_\-]{1,64}$")
 
 
+def recover_stale_processing_documents(stale_minutes: int) -> int:
+    """Recover documents stuck in processing on startup by marking them failed."""
+    try:
+        with SessionLocal() as db:
+            query = text(
+                """
+                UPDATE documents
+                SET status = 'failed',
+                    error_code = 'ingestion_interrupted',
+                    updated_at = NOW()
+                WHERE status = 'processing'
+                  AND updated_at < NOW() - make_interval(mins => :m)
+                RETURNING id;
+                """
+            )
+            result = db.execute(query, {"m": stale_minutes})
+            stale_ids = [row[0] for row in result.fetchall()]
+            if stale_ids:
+                db.execute(
+                    text("DELETE FROM document_chunks WHERE document_id = ANY(:ids)"),
+                    {"ids": stale_ids},
+                )
+                db.commit()
+                logger.warning(
+                    f"Recovered {len(stale_ids)} stale document(s) stuck in 'processing': {stale_ids}"
+                )
+            else:
+                db.commit()
+            return len(stale_ids)
+    except Exception as e:
+        logger.warning(
+            f"Could not perform startup stale processing document recovery: {e}"
+        )
+        return 0
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Startup and shutdown events."""
     logger.info(
         f"Starting Enterprise Knowledge AI (env={settings.ENVIRONMENT}, models={settings.OPENROUTER_MODELS})"
     )
+    recover_stale_processing_documents(settings.STALE_PROCESSING_MINUTES)
     yield
     logger.info("Shutting down Enterprise Knowledge AI")
 

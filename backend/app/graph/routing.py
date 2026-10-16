@@ -8,7 +8,7 @@ from app.graph.state import RAGState
 
 def route_after_validation(state: RAGState) -> Literal["end", "retrieve_hybrid"]:
     """Route from validate_question to either early exit or retrieval."""
-    if state.get("error_code") == "invalid_question":
+    if state.get("error_code") == "invalid_question" or state.get("is_greeting"):
         return "end"
     return "retrieve_hybrid"
 

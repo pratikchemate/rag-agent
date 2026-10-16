@@ -8,29 +8,30 @@ on:
 
 jobs:
   ping-services:
-    name: Keepalive Ping for Supabase and Backend
+    name: Keepalive Ping for Backend and Supabase
     runs-on: ubuntu-latest
     steps:
-      - name: Send Keepalive Ping to Supabase
+      - name: Ping Backend Readiness (Wakes Render & Queries Supabase DB)
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+        run: |
+          if [ -z "$BACKEND_URL" ]; then
+            echo "::error::BACKEND_URL secret is not configured"
+            exit 1
+          fi
+          echo "Sending readiness probe to backend ($BACKEND_URL/api/v1/health/ready)..."
+          curl -s -f --retry 3 --retry-delay 30 --max-time 120 "$BACKEND_URL/api/v1/health/ready"
+
+      - name: Secondary Ping to Supabase REST Endpoint
+        continue-on-error: true
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           if [ -n "$SUPABASE_URL" ]; then
-            echo "Sending keepalive request to Supabase REST endpoint..."
-            curl -s -f -H "apikey: $SUPABASE_ANON_KEY" "$SUPABASE_URL/rest/v1/" || echo "Supabase ping completed"
+            echo "Sending secondary keepalive request to Supabase REST endpoint..."
+            curl -s -f -H "apikey: $SUPABASE_ANON_KEY" "$SUPABASE_URL/rest/v1/"
           else
-            echo "SUPABASE_URL secret is not configured; skipping Supabase keepalive ping."
-          fi
-
-      - name: Send Keepalive Ping to Backend
-        env:
-          BACKEND_URL: ${{ secrets.BACKEND_URL }}
-        run: |
-          if [ -n "$BACKEND_URL" ]; then
-            echo "Sending keepalive request to Backend health probe..."
-            curl -s -f "$BACKEND_URL/api/v1/health/ready" || echo "Backend ping completed"
-          else
-            echo "BACKEND_URL secret is not configured; skipping backend keepalive ping."
+            echo "SUPABASE_URL secret is not configured; skipping secondary ping."
           fi
 

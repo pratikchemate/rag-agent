@@ -20,7 +20,16 @@ EXEMPT_PATTERNS = [
     r"^(?:this\s+is\s+)?not\s+(?:mentioned|specified|provided|available)\s+in\s+the\s+(?:provided|available)\s+documents?\b",
 ]
 
+# Patterns for non-substantive LLM meta-commentary (e.g. self-reported word counts, instruction compliance affirmations)
+META_PATTERNS = [
+    r"^(?:\(?total\s+)?word\s+count\s*:\s*~?\d+\s*words?\)?\.?$",
+    r"^(?:note:\s*)?all\s+sentences\s+(?:include|have|are)\s+cit(?:ed|ations)\b.*",
+    r"^(?:note:\s*)?every\s+sentence\s+(?:is|includes)\s+cit(?:ed|ations)\b.*",
+    r"^(?:note:\s*)?all\s+(?:statements|claims)\s+are\s+(?:directly\s+)?cited\b.*",
+]
+
 EXEMPT_REGEX = re.compile("|".join(EXEMPT_PATTERNS), re.IGNORECASE)
+META_REGEX = re.compile("|".join(META_PATTERNS), re.IGNORECASE)
 CITATION_LABEL_REGEX = re.compile(r"\[(S\d+)\]")
 
 
@@ -55,6 +64,14 @@ class CitationVerifier:
                 failure_reason="empty_answer",
             )
 
+        # Strip trailing or standalone meta-commentary lines (e.g. word counts, prompt instruction echoes)
+        cleaned_lines = [
+            line for line in clean_answer.split("\n")
+            if not (line.strip() and META_REGEX.match(line.strip()))
+        ]
+        if cleaned_lines:
+            clean_answer = "\n".join(cleaned_lines).strip()
+
         # Build map of valid labels: S1 -> RetrievalCandidate
         valid_map: Dict[str, RetrievalCandidate] = {}
         for idx, candidate in enumerate(retrieved_candidates, start=1):
@@ -73,7 +90,7 @@ class CitationVerifier:
 
         for sent in sentences:
             labels_in_sentence = CITATION_LABEL_REGEX.findall(sent)
-            is_exempt = bool(EXEMPT_REGEX.search(sent))
+            is_exempt = bool(EXEMPT_REGEX.search(sent) or META_REGEX.match(sent))
 
             if labels_in_sentence:
                 for lbl in labels_in_sentence:
@@ -105,7 +122,7 @@ class CitationVerifier:
         # Fail-closed if there are uncited factual sentences
         if uncited_factual_sentences:
             logger.warning(
-                f"Citation verification failed: {len(uncited_factual_sentences)} uncited factual sentence(s)."
+                f"Citation verification failed: {len(uncited_factual_sentences)} uncited factual sentence(s): {uncited_factual_sentences}"
             )
             return VerificationResult(
                 is_valid=False,

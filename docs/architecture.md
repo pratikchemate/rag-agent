@@ -129,7 +129,7 @@ LIMIT :candidate_k;
 
 The query and answer generation workflow is compiled as a stateful LangGraph graph (`backend/app/graph/workflow.py`):
 
-1. **`validate_question`:** Checks input length (1–2000 chars) and sanitizes whitespace. Rejects empty or invalid questions with HTTP 400.
+1. **`validate_question`:** Checks input length (1–2000 chars) and sanitizes whitespace. Rejects empty or invalid questions with HTTP 400. Conversational greetings (e.g., "hello", "hi", "what can you do") are detected via a deterministic fast-path regex check; they immediately return a concise capability overview without invoking retrieval or consuming LLM daily request quota. As an intentional design exception to the grounded citation rule, greeting responses carry empty citations (`citations=[]`).
 2. **`retrieve_hybrid`:** Queries PostgreSQL using dense vector embeddings and OR-joined tsquery.
 3. **`assess_evidence`:** Evaluates evidence sufficiency through a unified pure function (`is_evidence_sufficient`) shared between LangGraph and evaluation, parameterized by validated settings:
    - **Signal 1 (Absolute Floor - `MIN_RETRIEVAL_SIMILARITY`):** Requires dense cosine similarity $\ge 0.50$ (eliminates non-relevant topical queries).

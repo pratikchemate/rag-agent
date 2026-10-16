@@ -99,6 +99,9 @@ def test_numeric_bounds_validation():
     with pytest.raises(ValueError, match="EVIDENCE_LOW_KW_THRESHOLD must be between 0.0 and 1.0"):
         Settings(EVIDENCE_LOW_KW_THRESHOLD=-0.1)
 
+    with pytest.raises(ValueError, match="STALE_PROCESSING_MINUTES must be greater than 0"):
+        Settings(STALE_PROCESSING_MINUTES=0)
+
     with pytest.raises(
         ValueError, match="EVIDENCE_LOW_KW_MIN_SIMILARITY must be between 0.0 and 1.0"
     ):

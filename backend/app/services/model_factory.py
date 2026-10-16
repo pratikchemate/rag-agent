@@ -45,14 +45,35 @@ def is_retriable_provider_error(e: Exception) -> bool:
         "quota",
         "overloaded",
         "timeout",
+        "timed out",
+        "time out",
         "unavailable",
         "503",
         "502",
         "504",
         "connection error",
         "connect",
+        "network",
+        "unreachable",
+        "reset by peer",
     )
-    return any(sig in err_msg for sig in retriable_signals)
+    if any(sig in err_msg for sig in retriable_signals):
+        return True
+
+    import httpx
+
+    if isinstance(e, (TimeoutError, httpx.TimeoutException, httpx.NetworkError)):
+        return True
+
+    try:
+        import httpcore
+
+        if isinstance(e, (httpcore.TimeoutException, httpcore.NetworkError)):
+            return True
+    except ImportError:
+        pass
+
+    return False
 
 
 class ModelFactory:
@@ -76,15 +97,24 @@ class ModelFactory:
                 f"Model '{selected_model}' does not end in ':free' and ALLOW_PAID_MODEL is False."
             )
 
+        api_key = settings.get_openrouter_api_key()
+        if not api_key:
+            raise ServiceUnavailableError(
+                "OpenRouter API key is not configured. Please set OPENROUTER_API_KEY to enable LLM generation."
+            )
+
+        timeout_ms = int(settings.OPENROUTER_TIMEOUT_SECONDS * 1000)
         return ChatOpenRouter(
             model=selected_model,
-            api_key=settings.get_openrouter_api_key() or "missing_key",
+            api_key=api_key,
             temperature=0.0,
             max_tokens=settings.MAX_OUTPUT_TOKENS,
-            timeout=settings.OPENROUTER_TIMEOUT_SECONDS,
+            request_timeout=timeout_ms,
             max_retries=settings.OPENROUTER_MAX_RETRIES,
             reasoning={"effort": settings.OPENROUTER_REASONING_EFFORT},
-            extra_headers={
+            app_url=settings.OPENROUTER_APP_URL,
+            app_title=settings.OPENROUTER_APP_TITLE,
+            default_headers={
                 "HTTP-Referer": settings.OPENROUTER_APP_URL,
                 "X-Title": settings.OPENROUTER_APP_TITLE,
             },
@@ -131,10 +161,34 @@ class ModelFactory:
 
                 return response
             except Exception as e:
-                if isinstance(
-                    e, (ResponseTruncatedError, LLMDailyBudgetExhaustedError)
-                ) or not is_retriable_provider_error(e):
-                    # Raise immediately on truncation, budget exhaustion, or non-retriable errors
+                if isinstance(e, LLMDailyBudgetExhaustedError):
+                    # Raise immediately on budget exhaustion
+                    logger.error(f"Stopping model invocation: {str(e)}")
+                    raise e
+
+                if isinstance(e, ResponseTruncatedError):
+                    logger.warning(
+                        f"Model '{model_id}' was truncated due to output length cap. Attempting next in allowlist."
+                    )
+                    last_error = e
+                    continue
+
+                err_str = str(e).lower()
+                is_auth_error = (
+                    "unauthorized" in err_str
+                    or "authentication" in err_str
+                    or "api key" in err_str
+                    or "missing authentication header" in err_str
+                    or getattr(e, "status_code", None) == 401
+                )
+                if is_auth_error:
+                    logger.error(f"OpenRouter authentication failed: {str(e)}")
+                    raise ServiceUnavailableError(
+                        "OpenRouter API key is missing, unauthorized, or invalid. "
+                        "Please configure a valid OPENROUTER_API_KEY in your .env file."
+                    )
+
+                if not is_retriable_provider_error(e):
                     logger.error(f"Non-retriable exception invoking model '{model_id}': {str(e)}")
                     raise e
 
@@ -142,6 +196,9 @@ class ModelFactory:
                     f"Model '{model_id}' failed: {str(e)}. Attempting next in allowlist."
                 )
                 last_error = e
+
+        if isinstance(last_error, ResponseTruncatedError):
+            raise last_error
 
         raise ServiceUnavailableError(
             f"All configured free models failed or were unavailable. Last error: {str(last_error)}"

@@ -23,5 +23,6 @@ class RAGState(TypedDict, total=False):
     citation_labels: List[str]
     citations: List[Dict[str, Any]]
     abstained: bool
+    is_greeting: Optional[bool]
     error_code: Optional[str]
     timings_ms: Dict[str, float]

@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     # OpenRouter Inference Settings
     OPENROUTER_API_KEY: SecretStr = Field(default=SecretStr(""), description="OpenRouter API Key")
     OPENROUTER_MODELS: str = Field(
-        default="google/gemma-4-31b-it:free,google/gemma-4-26b-a4b-it:free,nvidia/nemotron-3.5-lightning:free,liquid/lfm-2.5-2.6b:free",
+        default="liquid/lfm-2.5-2.6b:free,google/gemma-4-31b-it:free,google/gemma-4-26b-a4b-it:free,nvidia/nemotron-3.5-lightning:free",
         description="Comma-separated allowlist of OpenRouter free models",
     )
     OPENROUTER_APP_TITLE: str = "Enterprise Knowledge AI"
@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     # Local Embeddings & Chunking
     EMBEDDING_MODEL: str = "BAAI/bge-small-en-v1.5"
     EMBEDDING_DIMENSIONS: int = 384
-    EMBEDDING_BATCH_SIZE: int = 16
+    EMBEDDING_BATCH_SIZE: int = 8
     EMBEDDING_THREADS: int = 1
     EMBEDDING_CACHE_DIR: str = ".fastembed_cache"
     CHUNK_SIZE: int = 1200
@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     EVIDENCE_SCORE_GAP_MIN: float = 0.05
     EVIDENCE_VECTOR_ONLY_MIN_SIMILARITY: float = 0.65
     EVIDENCE_KEYWORD_ONLY_MIN_SCORE: float = 0.45
-    MAX_OUTPUT_TOKENS: int = 700
+    MAX_OUTPUT_TOKENS: int = 1500
 
     # Request Bounds & Safety
     MAX_UPLOAD_MB: int = 5
@@ -82,6 +82,7 @@ class Settings(BaseSettings):
     MAX_CONTEXT_CHARS: int = 16000
     CHAT_RATE_LIMIT_PER_MINUTE: int = 10
     UPLOAD_RATE_LIMIT_PER_MINUTE: int = 3
+    STALE_PROCESSING_MINUTES: int = 15
 
     # CORS
     CORS_ALLOWED_ORIGINS: str = "http://localhost:5173"
@@ -123,10 +124,14 @@ class Settings(BaseSettings):
             raise ValueError("MAX_DOCUMENTS_PER_USER must be greater than 0")
         if self.MAX_CHUNKS_PER_DOCUMENT <= 0:
             raise ValueError("MAX_CHUNKS_PER_DOCUMENT must be greater than 0")
+        if self.MAX_OUTPUT_TOKENS <= 0:
+            raise ValueError("MAX_OUTPUT_TOKENS must be greater than 0")
         if self.MAX_QUESTION_LENGTH <= 0:
             raise ValueError("MAX_QUESTION_LENGTH must be greater than 0")
         if self.MAX_RETRIEVAL_ATTEMPTS < 1:
             raise ValueError("MAX_RETRIEVAL_ATTEMPTS must be at least 1")
+        if self.STALE_PROCESSING_MINUTES <= 0:
+            raise ValueError("STALE_PROCESSING_MINUTES must be greater than 0")
         evidence_threshold_keys = [
             "MIN_RETRIEVAL_SIMILARITY",
             "EVIDENCE_LOW_KW_THRESHOLD",

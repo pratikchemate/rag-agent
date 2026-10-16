@@ -698,6 +698,27 @@ Address P0 items before any deployment. P1 items are required to match the speci
 - [x] **4.5** Decide whether `GEMINI.md` / `.gemini/` are committed or ignored (V5).
 - [x] **4.6** Make the first commit and push so CI and the keep-alive workflow actually run (V6).
 
+### Phase 5: Conversational Greetings, Provider Resilience & Live Cascade Hardening (2026-10-16)
+- [x] **5.1 Conversational Greeting Fast-Path Router**
+  - Added `is_conversational_greeting` regex matcher and structured capability overview response in `backend/app/graph/nodes.py`.
+  - Added routing short-circuit in `backend/app/graph/routing.py` to route greetings directly to `END`, bypassing document retrieval and consuming 0 LLM budget (~3ms latency).
+  - Updated API retrieval metadata in `backend/app/api/chat.py` (`mode: conversational`, `attempts: 0`).
+  - Added unit and integration tests covering formal/informal greetings and fast-path behavior.
+- [x] **5.2 OpenRouter Provider Authentication & Error Trapping**
+  - Trapped 401 Unauthorized / missing authentication header errors in `backend/app/services/model_factory.py` to raise clean 503 `ServiceUnavailableError` instructing user to configure `OPENROUTER_API_KEY`.
+  - Wrapped `rag_graph.invoke()` with an exception handler in `backend/app/api/chat.py` to convert unexpected provider failures into clean 503 `ServiceUnavailableError` instead of crashing with 500.
+  - Enhanced frontend `ChatArea.tsx` to display an amber "LLM Generation Unavailable" status card that renders the backend error message guidance.
+- [x] **5.3 Provider Timeout, Connect Error & Fallback Cascade Hardening**
+  - Extended `is_retriable_provider_error` in `backend/app/services/model_factory.py` to classify `TimeoutError`, `httpx.TimeoutException`, `httpx.NetworkError`, `httpcore.TimeoutException`, `httpcore.NetworkError`, and error strings (`timed out`, `network`, `unreachable`) as retriable provider errors.
+  - Configured `ChatOpenRouter` with `request_timeout` (in milliseconds), native `app_url`, `app_title`, and `default_headers`, eliminating Pydantic user warnings and IPv6 socket connection hangs.
+  - Added unit test `test_timeout_and_network_error_cascades_to_fallback` in `backend/tests/unit/test_model_factory.py`.
+  - Verified live fallback cascade against real OpenRouter API endpoints under rate-limit conditions, falling back from 429 models to available free models.
+- [x] **5.4 Full End-to-End Verification**
+  - 58 backend unit tests passing in 2.30s.
+  - 19 backend integration tests passing in 3.62s (77 total backend tests passing).
+  - Frontend lint (`eslint`), type check (`tsc -b`), unit test (`vitest`), and production build (`vite build`) passing.
+  - Verified live conversational greetings (4.3ms response) and grounded document Q&A through Vite reverse proxy.
+
 ---
 
 ## Verification of Implementation (2026-10-14)

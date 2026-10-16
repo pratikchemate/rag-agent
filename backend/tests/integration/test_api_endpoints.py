@@ -3,8 +3,12 @@
 import io
 import uuid
 
+import pytest
+from sqlalchemy import text
+
 from app.db.models import Document
 from app.db.repositories import DocumentRepository
+from tests.conftest import TEST_USER_A
 
 
 def test_health_endpoints(client):
@@ -308,3 +312,93 @@ def test_client_polling_document_status_flow(client, auth_headers_user_a):
     assert doc_data["id"] == doc_id
     assert doc_data["filename"] == "poll_doc.txt"
     assert doc_data["status"] in ("processing", "ready")
+
+
+def test_chat_endpoint_greeting_returns_conversational_welcome(client, auth_headers_user_a):
+    """Verify chat endpoint returns conversational welcome for greetings without querying documents."""
+    resp = client.post(
+        "/api/v1/chat",
+        json={"question": "Hey there!"},
+        headers=auth_headers_user_a,
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["abstained"] is False
+    assert data["citations"] == []
+    assert data["retrieval"]["mode"] == "conversational"
+    assert data["retrieval"]["attempts"] == 0
+    assert "Enterprise Knowledge Assistant" in data["answer"]
+
+
+@pytest.mark.asyncio
+async def test_lifespan_recovers_stale_processing_documents(db_session):
+    """Verify lifespan startup resets stale processing documents to failed and cleans orphan chunks."""
+    from app.main import app, lifespan
+
+    stale_id = uuid.uuid4()
+    fresh_id = uuid.uuid4()
+    owner_id = TEST_USER_A
+
+    # Insert a stale document (updated 30 minutes ago)
+    db_session.execute(
+        text("""
+            INSERT INTO documents (id, owner_id, filename, storage_path, content_type, file_size_bytes, checksum_sha256, status, created_at, updated_at)
+            VALUES (:id, :owner, 'stale.txt', 'p/stale.txt', 'text/plain', 100, 'stale_sha_123', 'processing',
+                    NOW() - INTERVAL '30 minutes', NOW() - INTERVAL '30 minutes')
+        """),
+        {"id": str(stale_id), "owner": str(owner_id)},
+    )
+    # Insert an orphan chunk for the stale document
+    db_session.execute(
+        text("""
+            INSERT INTO document_chunks (id, document_id, owner_id, chunk_index, page_number, start_index, content, embedding)
+            VALUES (:chunk_id, :doc_id, :owner, 0, 1, 0, 'stale content', (:vec)::vector)
+        """),
+        {
+            "chunk_id": str(uuid.uuid4()),
+            "doc_id": str(stale_id),
+            "owner": str(owner_id),
+            "vec": "[" + ",".join(["0.1"] * 384) + "]",
+        },
+    )
+
+    # Insert a fresh document (updated just now)
+    db_session.execute(
+        text("""
+            INSERT INTO documents (id, owner_id, filename, storage_path, content_type, file_size_bytes, checksum_sha256, status, created_at, updated_at)
+            VALUES (:id, :owner, 'fresh.txt', 'p/fresh.txt', 'text/plain', 100, 'fresh_sha_456', 'processing',
+                    NOW(), NOW())
+        """),
+        {"id": str(fresh_id), "owner": str(owner_id)},
+    )
+    db_session.commit()
+
+    # Run lifespan startup
+    async with lifespan(app):
+        pass
+
+    # Verify stale document is marked failed with error_code
+    stale_doc = db_session.execute(
+        text("SELECT status, error_code FROM documents WHERE id = :id"),
+        {"id": str(stale_id)},
+    ).fetchone()
+    assert stale_doc is not None
+    assert stale_doc[0] == "failed"
+    assert stale_doc[1] == "ingestion_interrupted"
+
+    # Verify orphan chunks for stale doc are deleted
+    orphan_chunks = db_session.execute(
+        text("SELECT count(*) FROM document_chunks WHERE document_id = :id"),
+        {"id": str(stale_id)},
+    ).scalar()
+    assert orphan_chunks == 0
+
+    # Verify fresh document remains untouched in processing status
+    fresh_doc = db_session.execute(
+        text("SELECT status, error_code FROM documents WHERE id = :id"),
+        {"id": str(fresh_id)},
+    ).fetchone()
+    assert fresh_doc is not None
+    assert fresh_doc[0] == "processing"
+    assert fresh_doc[1] is None
+

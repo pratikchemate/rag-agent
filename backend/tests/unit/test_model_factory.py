@@ -47,6 +47,20 @@ def test_non_retriable_error_raises_immediately(monkeypatch):
         ModelFactory.invoke_with_fallback([HumanMessage(content="Hello")])
 
 
+def test_unauthorized_provider_error_raises_service_unavailable(monkeypatch):
+    """Verify that 401/Missing Authentication header raises ServiceUnavailableError."""
+    monkeypatch.setattr(model_factory, "_test_model_override", None)
+
+    mock_chat = MagicMock()
+    mock_chat.invoke.side_effect = RuntimeError("Missing Authentication header")
+    monkeypatch.setattr(ModelFactory, "get_chat_model", lambda name=None: mock_chat)
+
+    with pytest.raises(
+        ServiceUnavailableError, match="OpenRouter API key is missing, unauthorized"
+    ):
+        ModelFactory.invoke_with_fallback([HumanMessage(content="Hello")])
+
+
 def test_retriable_error_cascades_to_fallback(monkeypatch):
     """Verify that 429 rate limit errors cascade to next model in allowlist."""
     monkeypatch.setattr(model_factory, "_test_model_override", None)
@@ -73,6 +87,67 @@ def test_retriable_error_cascades_to_fallback(monkeypatch):
 
     res = ModelFactory.invoke_with_fallback([HumanMessage(content="Hello")])
     assert res.content == "Success from model 2 [S1]"
+
+
+def test_timeout_and_network_error_cascades_to_fallback(monkeypatch):
+    """Verify that read timeouts and network errors cascade to next model in allowlist."""
+    import httpx
+
+    monkeypatch.setattr(model_factory, "_test_model_override", None)
+
+    settings = Settings(
+        OPENROUTER_MODELS="model1:free,model2:free",
+        ALLOW_PAID_MODEL=True,
+    )
+    monkeypatch.setattr(model_factory, "get_settings", lambda: settings)
+
+    m1 = MagicMock()
+    m1.invoke.side_effect = httpx.ReadTimeout("The read operation timed out")
+
+    m2 = MagicMock()
+    m2.invoke.return_value = AIMessage(
+        content="Success after timeout [S1]",
+        response_metadata={"finish_reason": "stop"},
+    )
+
+    def mock_get_chat_model(name):
+        return m1 if name == "model1:free" else m2
+
+    monkeypatch.setattr(ModelFactory, "get_chat_model", mock_get_chat_model)
+
+    res = ModelFactory.invoke_with_fallback([HumanMessage(content="Hello")])
+    assert res.content == "Success after timeout [S1]"
+
+
+def test_truncated_model_cascades_to_fallback(monkeypatch):
+    """Verify that a model response truncated by length cap cascades to the next model in allowlist."""
+    monkeypatch.setattr(model_factory, "_test_model_override", None)
+
+    settings = Settings(
+        OPENROUTER_MODELS="model1:free,model2:free",
+        ALLOW_PAID_MODEL=True,
+    )
+    monkeypatch.setattr(model_factory, "get_settings", lambda: settings)
+
+    m1 = MagicMock()
+    m1.invoke.return_value = AIMessage(
+        content="Truncated...",
+        response_metadata={"finish_reason": "length"},
+    )
+
+    m2 = MagicMock()
+    m2.invoke.return_value = AIMessage(
+        content="Complete answer from model 2 [S1]",
+        response_metadata={"finish_reason": "stop"},
+    )
+
+    def mock_get_chat_model(name):
+        return m1 if name == "model1:free" else m2
+
+    monkeypatch.setattr(ModelFactory, "get_chat_model", mock_get_chat_model)
+
+    res = ModelFactory.invoke_with_fallback([HumanMessage(content="Hello")])
+    assert res.content == "Complete answer from model 2 [S1]"
 
 
 def test_all_models_failing_raises_service_unavailable(monkeypatch):

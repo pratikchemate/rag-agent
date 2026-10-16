@@ -124,3 +124,38 @@ def test_partial_unique_index_allows_reupload_after_failed(db_session):
     )
     DocumentRepository.create(db_session, retry_doc)
     assert retry_doc.id is not None
+
+
+def test_public_demo_corpus_visible_and_immutable(client, db_session, auth_headers_user_a):
+    """Verify that public demo documents are visible in listings to any user but cannot be deleted (HTTP 403)."""
+    demo_owner = uuid.UUID("00000000-0000-0000-0000-000000000001")
+    demo_doc = Document(
+        id=uuid.uuid4(),
+        owner_id=demo_owner,
+        filename="public_demo_guide.md",
+        storage_path="demo/public_demo_guide.md",
+        content_type="text/markdown",
+        file_size_bytes=512,
+        checksum_sha256="public_demo_sha_12345",
+        status="ready",
+        chunk_count=1,
+        is_public=True,
+    )
+    DocumentRepository.create(db_session, demo_doc)
+
+    # 1. User A lists documents -> sees public demo doc
+    resp_list = client.get("/api/v1/documents", headers=auth_headers_user_a)
+    assert resp_list.status_code == 200
+    filenames = [d["filename"] for d in resp_list.json()]
+    assert "public_demo_guide.md" in filenames
+
+    # 2. User A gets metadata for public demo doc -> 200
+    resp_get = client.get(f"/api/v1/documents/{demo_doc.id}", headers=auth_headers_user_a)
+    assert resp_get.status_code == 200
+    assert resp_get.json()["is_public"] is True
+
+    # 3. User A attempts DELETE on public demo doc -> 403 Forbidden
+    resp_del = client.delete(f"/api/v1/documents/{demo_doc.id}", headers=auth_headers_user_a)
+    assert resp_del.status_code == 403
+    assert resp_del.json()["code"] == "forbidden"
+

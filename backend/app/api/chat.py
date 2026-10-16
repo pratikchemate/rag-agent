@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.auth import AuthenticatedUser, get_current_user
-from app.core.errors import NotFoundError
+from app.core.errors import AppException, NotFoundError, ServiceUnavailableError
 from app.core.logging import get_logger, request_id_ctx
 from app.core.rate_limit import get_chat_limiter
 from app.db.engine import get_db
@@ -61,7 +61,13 @@ def ask_question(
         "timings_ms": {},
     }
 
-    final_state = rag_graph.invoke(initial_state)
+    try:
+        final_state = rag_graph.invoke(initial_state)
+    except AppException:
+        raise
+    except Exception as e:
+        logger.error(f"Unhandled error in RAG graph execution: {str(e)}", exc_info=True)
+        raise ServiceUnavailableError(f"An error occurred while generating your response: {str(e)}")
 
     total_elapsed_ms = (time.perf_counter() - start_total_time) * 1000.0
     graph_timings = final_state.get("timings_ms", {})
@@ -73,9 +79,10 @@ def ask_question(
     citations = [Citation(**c) if isinstance(c, dict) else c for c in citations_data]
 
     retrieval_debug = final_state.get("retrieval_debug", {})
+    is_greeting = final_state.get("is_greeting", False)
     retrieval_metadata = RetrievalMetadata(
-        mode=retrieval_debug.get("mode", "hybrid_rrf"),
-        attempts=final_state.get("retrieval_attempt", 1),
+        mode=retrieval_debug.get("mode", "conversational" if is_greeting else "hybrid_rrf"),
+        attempts=0 if is_greeting else final_state.get("retrieval_attempt", 1),
         returned_chunks=retrieval_debug.get("returned_chunks", len(citations)),
     )
 

@@ -81,3 +81,21 @@ def test_pure_abstention_response_passes():
     assert res.is_valid is True
     assert res.abstained is True
     assert len(res.citations) == 0
+
+
+def test_meta_commentary_stripped_and_exempt():
+    """Verify that trailing meta-commentary like word counts or citation affirmations are stripped."""
+    c1 = make_candidate(1, filename="lstm.pdf")
+    answer = (
+        "LSTM is an advanced recurrent neural network [S1].\n"
+        "Word count: ~220 words.\n"
+        "All sentences include citations as required."
+    )
+
+    res = CitationVerifier.verify(answer, [c1])
+    assert res.is_valid is True
+    assert res.abstained is False
+    assert len(res.citations) == 1
+    assert "Word count" not in res.answer
+    assert "All sentences include" not in res.answer
+

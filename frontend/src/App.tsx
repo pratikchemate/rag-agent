@@ -65,6 +65,8 @@ export function App() {
     } else {
       // Offline / dev mode default
       setIsDemoMode(true);
+      setUserEmail('demo@enterprise.ai');
+      setToken('test-token-00000000-0000-0000-0000-000000000001');
     }
   }, []);
 
@@ -211,9 +213,15 @@ export function App() {
     if (supabase) {
       await supabase.auth.signOut();
     }
-    setUserEmail(null);
-    setToken(undefined);
-    setIsDemoMode(true);
+    if (!isSupabaseConfigured) {
+      setUserEmail('demo@enterprise.ai');
+      setToken('test-token-00000000-0000-0000-0000-000000000001');
+      setIsDemoMode(true);
+    } else {
+      setUserEmail(null);
+      setToken(undefined);
+      setIsDemoMode(true);
+    }
   };
 
   return (
@@ -250,6 +258,13 @@ export function App() {
             onOpenCitation={(citation) => setActiveCitation(citation)}
             onOpenFeedback={(requestId, rating) => setFeedbackState({ id: requestId, rating })}
             onToggleSidebar={() => setIsSidebarMobileOpen((prev) => !prev)}
+            onClearMessages={() => setMessages([])}
+            onStopGeneration={() => {
+              if (chatAbortRef.current) {
+                chatAbortRef.current.abort();
+                setIsChatLoading(false);
+              }
+            }}
           />
         </main>
       </div>
@@ -305,6 +320,8 @@ export function App() {
         }}
         onContinueDemo={() => {
           setIsDemoMode(true);
+          setUserEmail('demo@enterprise.ai');
+          setToken('test-token-00000000-0000-0000-0000-000000000001');
           loadDocuments();
         }}
       />

@@ -1,5 +1,6 @@
 """Nodes executing individual steps of the LangGraph RAG workflow."""
 
+import re
 import time
 from typing import Any, Dict
 from uuid import UUID
@@ -54,18 +55,110 @@ def dict_to_candidate(d: Dict[str, Any]) -> RetrievalCandidate:
     )
 
 
+GREETING_PATTERNS = {
+    # Greetings & salutations
+    "hi",
+    "hey",
+    "hello",
+    "hey there",
+    "hello there",
+    "hi there",
+    "good morning",
+    "good afternoon",
+    "good evening",
+    "good day",
+    "howdy",
+    "greetings",
+    "yo",
+    "sup",
+    "whats up",
+    "what is up",
+    # Identity & overview
+    "who are you",
+    "what are you",
+    "what is this",
+    "tell me about yourself",
+    "introduce yourself",
+    # Capabilities & help
+    "what can you do",
+    "what do you do",
+    "what can i do",
+    "what can i ask",
+    "what can i ask you",
+    "how can you help",
+    "how can you help me",
+    "how does this work",
+    "how do you work",
+    "how do i use this",
+    "how to use this",
+    "help",
+    "help me",
+    "capabilities",
+    "features",
+}
+
+GREETING_ANSWER = (
+    "Hello! I am your Enterprise Knowledge Assistant.\n\n"
+    "Here is what I can do:\n"
+    "• **Answer Document Questions**: Ask questions about your indexed policies, architecture, APIs, or incident guides.\n"
+    "• **Verify Grounded Sources**: Every answer is grounded in your uploaded documents with verifiable citation links.\n"
+    "• **Scope by Document**: Filter questions to specific documents using the sidebar.\n"
+    "• **Upload & Ingest**: Upload PDF, Markdown, or text files to expand the knowledge base."
+)
+
+
+def is_conversational_greeting(text: str) -> bool:
+    """Determine if a query is purely a conversational greeting or capability inquiry."""
+    # Normalize punctuation and collapse whitespace
+    cleaned = re.sub(r"[^\w\s]", " ", text.strip().lower())
+    cleaned = " ".join(cleaned.split())
+
+    # Expand common informal shorthands
+    normalized = re.sub(r"\bu\b", "you", cleaned)
+    normalized = re.sub(r"\br\b", "are", normalized)
+    normalized = re.sub(r"\bur\b", "your", normalized)
+    normalized = re.sub(r"\bwhats\b", "what is", normalized)
+    normalized = " ".join(normalized.split())
+
+    if normalized in GREETING_PATTERNS or cleaned in GREETING_PATTERNS:
+        return True
+
+    capability_regexes = [
+        r"^(what|how) can (you|i) (do|ask|help)( (me|for me|here|please))?$",
+        r"^what (do you do|can you do for me|are your capabilities|are your features)$",
+        r"^who (are you|created you|made you)$",
+        r"^how (does this work|do you work|can i use this)$",
+    ]
+    return any(re.match(pat, normalized) for pat in capability_regexes)
+
+
 def validate_question_node(state: RAGState) -> RAGState:
-    """Validate question format and length."""
+    """Validate question format and length, or handle conversational greetings."""
     settings = get_settings()
     question = (state.get("question") or "").strip()
 
     if not question or len(question) > settings.MAX_QUESTION_LENGTH:
         raise BadRequestError("Question cannot be empty or exceed maximum character limits.")
 
+    if is_conversational_greeting(question):
+        logger.info(f"Detected conversational greeting query: '{question}'")
+        return {
+            "question": question,
+            "search_query": question,
+            "retrieval_attempt": 0,
+            "is_greeting": True,
+            "answer": GREETING_ANSWER,
+            "abstained": False,
+            "citations": [],
+            "error_code": None,
+            "timings_ms": state.get("timings_ms", {}),
+        }
+
     return {
         "question": question,
         "search_query": question,
         "retrieval_attempt": 1,
+        "is_greeting": False,
         "error_code": None,
         "timings_ms": state.get("timings_ms", {}),
     }

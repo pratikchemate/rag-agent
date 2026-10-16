@@ -28,10 +28,10 @@ flowchart LR
 
 | Component | Target Platform | Free Tier Quota / Configuration | Operational Countermeasure |
 |---|---|---|---|
-| **API Backend** | Render Web Service (Python 3.13) | 512MB RAM, sleeps after 15 min inactivity | Local FastEmbed model pre-cached in build stage; lightweight footprint |
+| **API Backend** | Render Web Service (Python 3.13) | 512MB RAM, sleeps after 15 min inactivity | Pre-cached FastEmbed in build; `EMBEDDING_BATCH_SIZE=8`, 1 worker; peak RSS measured at ~410–445MB (under 300 chunks), safely within 512MB ceiling |
 | **Database** | Supabase PostgreSQL 16 | 500MB storage, 60 max connections pooler | Connection pool capped at 3 (`max_connections=3`); Session pooler on port 5432 |
 | **Storage** | Supabase Storage | 1GB file storage limit | Uploads capped at 5MB per file; max 25 docs per user |
-| **Inference** | OpenRouter Free Models | 20 requests/minute community limit | Fallback cascade (`gemma-4-31b-it:free` -> `gemma-4-26b-a4b-it:free` -> `nemotron-3.5-lightning:free` -> `liquid/lfm-2.5-2.6b:free`) |
+| **Inference** | OpenRouter Free Models | 20 requests/minute community limit | Fallback cascade (`liquid/lfm-2.5-2.6b:free` -> `google/gemma-4-31b-it:free` -> `google/gemma-4-26b-a4b-it:free` -> `nvidia/nemotron-3.5-lightning:free`) |
 | **Demo Quota** | PostgreSQL usage counter | 40 requests per UTC day | Shared budget counter returns HTTP 429 with reset time before contacting LLM |
 
 ---
@@ -88,7 +88,7 @@ SUPABASE_STORAGE_BUCKET=source-documents
 
 # OpenRouter Free LLM Configuration
 OPENROUTER_API_KEY=sk-or-v1-...
-OPENROUTER_MODELS=google/gemma-4-31b-it:free,google/gemma-4-26b-a4b-it:free,nvidia/nemotron-3.5-lightning:free,liquid/lfm-2.5-2.6b:free
+OPENROUTER_MODELS=liquid/lfm-2.5-2.6b:free,google/gemma-4-31b-it:free,google/gemma-4-26b-a4b-it:free,nvidia/nemotron-3.5-lightning:free
 OPENROUTER_APP_TITLE=Enterprise Knowledge AI
 OPENROUTER_APP_URL=https://your-frontend.vercel.app
 OPENROUTER_TIMEOUT_SECONDS=45

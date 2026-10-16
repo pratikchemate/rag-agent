@@ -53,7 +53,7 @@ def test_compiled_graph_abstain_path_never_reaches_verification(monkeypatch):
     """Verify compiled LangGraph executes abstain path without invoking generate_answer or verify_citations."""
     from uuid import uuid4
 
-    from app.graph import nodes
+    from app.graph import nodes, workflow
     from app.graph.workflow import create_rag_graph
 
     # Track invocations
@@ -81,6 +81,9 @@ def test_compiled_graph_abstain_path_never_reaches_verification(monkeypatch):
     monkeypatch.setattr(nodes, "generate_answer_node", mock_generate)
     monkeypatch.setattr(nodes, "verify_citations_node", mock_verify)
     monkeypatch.setattr(nodes, "retrieve_hybrid_node", mock_retrieve)
+    monkeypatch.setattr(workflow, "generate_answer_node", mock_generate)
+    monkeypatch.setattr(workflow, "verify_citations_node", mock_verify)
+    monkeypatch.setattr(workflow, "retrieve_hybrid_node", mock_retrieve)
 
     # Compile fresh graph with patched nodes
     test_graph = create_rag_graph()
@@ -103,3 +106,40 @@ def test_compiled_graph_abstain_path_never_reaches_verification(monkeypatch):
     assert "The available documents do not contain" in final_state.get("answer", "")
     assert not generate_called, "generate_answer_node must never be invoked on abstain path"
     assert not verify_called, "verify_citations_node must never be invoked on abstain path"
+
+
+def test_conversational_greeting_detection():
+    """Verify is_conversational_greeting detects greetings and rejects document questions."""
+    from app.graph.nodes import is_conversational_greeting
+
+    # Greetings / basic capability queries
+    assert is_conversational_greeting("hey") is True
+    assert is_conversational_greeting("Hello!") is True
+    assert is_conversational_greeting("hi there") is True
+    assert is_conversational_greeting("good morning") is True
+    assert is_conversational_greeting("what can you do?") is True
+    assert is_conversational_greeting("what can u do") is True
+    assert is_conversational_greeting("who r u") is True
+    assert is_conversational_greeting("how does this work") is True
+    assert is_conversational_greeting("tell me about yourself") is True
+    assert is_conversational_greeting("help") is True
+
+    # Document questions containing greeting words or general queries must NOT be treated as pure greetings
+    assert is_conversational_greeting("hello, what is the password policy?") is False
+    assert is_conversational_greeting("hey, how does incident response work?") is False
+    assert is_conversational_greeting("What is the average temperature on Mars?") is False
+
+
+def test_validate_question_node_greeting_fast_path():
+    """Verify validate_question_node sets greeting response and route_after_validation exits to end."""
+    from app.graph.nodes import validate_question_node
+
+    greeting_state: RAGState = {"question": "Hello!"}
+    result = validate_question_node(greeting_state)
+
+    assert result["is_greeting"] is True
+    assert result["abstained"] is False
+    assert result["citations"] == []
+    assert result["retrieval_attempt"] == 0
+    assert "Enterprise Knowledge Assistant" in result["answer"]
+    assert route_after_validation(result) == "end"
