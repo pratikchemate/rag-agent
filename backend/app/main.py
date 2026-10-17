@@ -54,9 +54,7 @@ def recover_stale_processing_documents(stale_minutes: int) -> int:
                 db.commit()
             return len(stale_ids)
     except Exception as e:
-        logger.warning(
-            f"Could not perform startup stale processing document recovery: {e}"
-        )
+        logger.warning(f"Could not perform startup stale processing document recovery: {e}")
         return 0
 
 

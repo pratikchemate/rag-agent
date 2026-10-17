@@ -16,7 +16,7 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 
-from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.auth import AuthenticatedUser, get_current_user, get_current_user_optional
 from app.core.config import get_settings
 from app.core.errors import (
     BadRequestError,
@@ -24,6 +24,7 @@ from app.core.errors import (
     NotFoundError,
     PayloadTooLargeError,
     ServiceUnavailableError,
+    UnauthorizedError,
 )
 from app.core.logging import get_logger
 from app.core.rate_limit import get_upload_limiter
@@ -57,6 +58,11 @@ async def upload_document(
     db: Session = Depends(get_db),
 ):
     """Upload document for asynchronous ingestion pipeline (HTTP 202)."""
+    if user.role == "anonymous":
+        raise UnauthorizedError(
+            "Authentication required to upload documents. Please sign in with an invited reviewer account."
+        )
+
     settings = get_settings()
 
     # 1. Rate limiting
@@ -157,7 +163,7 @@ async def upload_document(
 
 @router.get("", response_model=List[DocumentRead])
 def list_documents(
-    user: AuthenticatedUser = Depends(get_current_user),
+    user: AuthenticatedUser = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """List documents owned by the user plus seeded public demo documents."""
@@ -168,7 +174,7 @@ def list_documents(
 @router.get("/{document_id}", response_model=DocumentRead)
 def get_document(
     document_id: UUID,
-    user: AuthenticatedUser = Depends(get_current_user),
+    user: AuthenticatedUser = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """Get metadata for a specific document."""
@@ -183,7 +189,7 @@ def preview_document(
     document_id: UUID,
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
-    user: AuthenticatedUser = Depends(get_current_user),
+    user: AuthenticatedUser = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """Get chunks preview for citation drill-down."""
@@ -214,6 +220,8 @@ def delete_document(
     db: Session = Depends(get_db),
 ):
     """Delete a document and its stored chunks/file. Rejects public corpus with 403."""
+    if user.role == "anonymous":
+        raise UnauthorizedError("Authentication required to delete documents.")
     doc = DocumentRepository.get_by_id(db, document_id, user.user_id, allow_public=True)
     if not doc:
         raise NotFoundError("Document not found")

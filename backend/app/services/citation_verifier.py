@@ -66,7 +66,8 @@ class CitationVerifier:
 
         # Strip trailing or standalone meta-commentary lines (e.g. word counts, prompt instruction echoes)
         cleaned_lines = [
-            line for line in clean_answer.split("\n")
+            line
+            for line in clean_answer.split("\n")
             if not (line.strip() and META_REGEX.match(line.strip()))
         ]
         if cleaned_lines:

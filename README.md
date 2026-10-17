@@ -3,11 +3,23 @@
 > **A production-grade, multi-tenant Retrieval-Augmented Generation (RAG) platform with PostgreSQL pgvector, LangGraph, and verifiable sentence-level source citations.**
 
 [![CI](https://github.com/pratik/rag-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/pratik/rag-agent/actions/workflows/ci.yml)
+[![Live Demo](https://img.shields.io/badge/Demo-enterprise--knowledge--ai.vercel.app-brightgreen.svg?logo=vercel)](https://enterprise-knowledge-ai.vercel.app)
+[![API Status](https://img.shields.io/badge/API-Live_on_Render-46E3B7.svg?logo=render)](https://enterprise-knowledge-ai-api.onrender.com/api/v1/health/live)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_pgvector-336791.svg?logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
 [![LangGraph](https://img.shields.io/badge/LangGraph-0.2+-blue.svg)](https://langchain-ai.github.io/langgraph/)
 [![React](https://img.shields.io/badge/React-18-61DAFB.svg?logo=react&logoColor=black)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+
+---
+
+## 🌐 Live Demo & Access
+
+- **Production Frontend:** [https://enterprise-knowledge-ai.vercel.app](https://enterprise-knowledge-ai.vercel.app)
+- **Production Backend API:** [https://enterprise-knowledge-ai-api.onrender.com](https://enterprise-knowledge-ai-api.onrender.com)
+- **Pre-Seeded Corpus (Demo Mode):** The live system is pre-seeded with enterprise specifications, deployment runbooks, and security policies. Reviewers can immediately test chat, hybrid retrieval, and interactive citations without creating an account.
+- **Reviewer Sign-In & Uploads:** New user sign-ups are set to **Invite-Only** to protect free-tier LLM and database quotas. Use the invited reviewer credentials (`demo-reviewer@example.com` / `SecurePassword123!`) or request an invite to upload custom PDF/Markdown documents.
+- **Render Free Cold Start:** On initial access after 15+ minutes of inactivity, Render Free web services require ~50–70s to spin up. A scheduled GitHub keep-alive workflow pings the health probes bi-weekly to minimize downtime.
 
 ---
 

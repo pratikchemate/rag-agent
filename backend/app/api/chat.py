@@ -3,10 +3,10 @@
 import time
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
-from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.auth import AuthenticatedUser, get_current_user_optional
 from app.core.errors import AppException, NotFoundError, ServiceUnavailableError
 from app.core.logging import get_logger, request_id_ctx
 from app.core.rate_limit import get_chat_limiter
@@ -29,7 +29,8 @@ router = APIRouter(prefix="/chat", tags=["Chat"])
 @router.post("", response_model=ChatResponse)
 def ask_question(
     request: ChatRequest,
-    user: AuthenticatedUser = Depends(get_current_user),
+    req: Request,
+    user: AuthenticatedUser = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """Execute evidence-grounded RAG workflow via LangGraph."""
@@ -37,8 +38,10 @@ def ask_question(
     req_id = request_id_ctx.get() or str(uuid.uuid4())
 
     # 1. Rate limiting (per-user/IP)
+    client_ip = req.client.host if req.client else "anonymous"
+    rate_key = str(user.user_id) if user.role != "anonymous" else f"anon_{client_ip}"
     chat_limiter = get_chat_limiter()
-    chat_limiter.check(str(user.user_id))
+    chat_limiter.check(rate_key)
 
     # 2. Validate selected document IDs (verify ownership or public status)
     if request.document_ids:

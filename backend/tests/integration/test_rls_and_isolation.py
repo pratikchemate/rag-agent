@@ -158,4 +158,3 @@ def test_public_demo_corpus_visible_and_immutable(client, db_session, auth_heade
     resp_del = client.delete(f"/api/v1/documents/{demo_doc.id}", headers=auth_headers_user_a)
     assert resp_del.status_code == 403
     assert resp_del.json()["code"] == "forbidden"
-

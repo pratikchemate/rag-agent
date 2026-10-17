@@ -119,11 +119,14 @@ def verify_supabase_jwt(token: str) -> Dict[str, Any]:
     raise UnauthorizedError("Authentication provider not configured")
 
 
+ANONYMOUS_USER_ID = UUID("00000000-0000-0000-0000-000000000000")
+
+
 def get_current_user(
     authorization: Optional[str] = Header(None, alias="Authorization"),
 ) -> AuthenticatedUser:
     """Dependency for securing endpoints and extracting verified owner_id."""
-    if not authorization:
+    if not authorization or not authorization.strip():
         raise UnauthorizedError("Missing Authorization header")
 
     parts = authorization.split()
@@ -131,6 +134,9 @@ def get_current_user(
         raise UnauthorizedError("Invalid Authorization header format. Expected 'Bearer <token>'")
 
     token = parts[1]
+    if token.lower() in ("undefined", "null", ""):
+        raise UnauthorizedError("Missing or invalid Authorization token")
+
     payload = verify_supabase_jwt(token)
 
     sub = payload.get("sub")
@@ -147,3 +153,25 @@ def get_current_user(
         email=payload.get("email"),
         role=payload.get("role", "authenticated"),
     )
+
+
+def get_current_user_optional(
+    authorization: Optional[str] = Header(None, alias="Authorization"),
+) -> AuthenticatedUser:
+    """Dependency extracting verified user if Authorization header is provided, or returning anonymous demo user."""
+    if not authorization or not authorization.strip():
+        return AuthenticatedUser(
+            user_id=ANONYMOUS_USER_ID,
+            email=None,
+            role="anonymous",
+        )
+
+    parts = authorization.split()
+    if len(parts) == 2 and parts[1].lower() in ("undefined", "null", ""):
+        return AuthenticatedUser(
+            user_id=ANONYMOUS_USER_ID,
+            email=None,
+            role="anonymous",
+        )
+
+    return get_current_user(authorization=authorization)

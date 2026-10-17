@@ -1,6 +1,7 @@
 .gemini
 GEMINI.md
 /graphify-out
+gem1
 
 # Python
 __pycache__/

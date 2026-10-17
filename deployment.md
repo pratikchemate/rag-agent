@@ -233,31 +233,31 @@ Each item is problem · evidence · fix · verify, the same format as `updates.m
 
 ## Phase 6: Production smoke test (AGENTS.md §19)
 
-- [ ] Sign in with an invited account. The sign-up path is blocked for uninvited emails.
-- [ ] The data-handling disclaimer appears before the first upload.
-- [ ] Upload a small public PDF. The response is **202** / `processing`, and polling reaches `ready`.
-- [ ] The document row, its chunks and the Storage object all exist.
-- [ ] A known-answer question returns an answer with `[S1]`. The citation's filename, page and excerpt match the real chunk.
-- [ ] An out-of-corpus question gets an **abstention** that isn't styled as an error.
-- [ ] A greeting ("hi") returns the conversational reply and doesn't consume the LLM budget (check `daily_usage_counters`).
-- [ ] As **user B**: user A's document ID returns 404 for get, preview, delete and chat filter. The public demo docs are visible but not deletable (403).
-- [ ] An anon-key Data API query on `documents` and `document_chunks` returns `[]`.
-- [ ] Deleting the document removes the Storage object and all its chunk rows.
-- [ ] Budget exhaustion is tested **in a local, non-production run** with `LLM_DAILY_REQUEST_BUDGET=1`: you get a 429 `llm_daily_budget_exhausted` with `reset_at`, and the UI shows the reset time. Do not burn the production quota.
-- [ ] Provider failure, tested locally with a mock: fallback moves to the next `:free` slug and never reaches a paid one.
-- [ ] Cold start: after more than 15 minutes idle, record the time to first `/health/live` and to the first chat. Note both in `docs/deployment.md`.
+- [x] Sign in with an invited account. The sign-up path is blocked for uninvited emails.
+- [x] The data-handling disclaimer appears before the first upload.
+- [x] Upload a small public PDF/text file. The response is **202** / `processing`, and polling reaches `ready`.
+- [x] The document row, its chunks and the Storage object all exist.
+- [x] A known-answer question returns an answer with `[S1]`. The citation's filename, page and excerpt match the real chunk.
+- [x] An out-of-corpus question gets an **abstention** that isn't styled as an error.
+- [x] A greeting ("hi") returns the conversational reply and doesn't consume the LLM budget (check `daily_usage_counters`).
+- [x] As **user B**: user A's document ID returns 404 for get, preview, delete and chat filter. The public demo docs are visible but not deletable (403).
+- [x] An anon-key Data API query on `documents` and `document_chunks` returns `[]`.
+- [x] Deleting the document removes the Storage object and all its chunk rows.
+- [x] Budget exhaustion is tested **in a local, non-production run** with `LLM_DAILY_REQUEST_BUDGET=1`: you get a 429 `llm_daily_budget_exhausted` with `reset_at`, and the UI shows the reset time. Do not burn the production quota.
+- [x] Provider failure, tested locally with a mock: fallback moves to the next `:free` slug and never reaches a paid one.
+- [x] Cold start: recorded in `docs/deployment.md` (~50–70s spin-down on Render Free; warm health ~100–200ms; warm RAG query ~5–6s; greeting ~2ms).
 
 ---
 
 ## Phase 7: Post-deploy polish
 
-- Add the live demo URL, invite instructions and screenshots (sign-in, cited answer, abstention, citation panel) to the README.
-- Record the measured cold-start times and the 1.6 memory peak in `docs/deployment.md`.
-- **Rollback notes:**
+- [x] Add the live demo URL, invite instructions and reviewer notes to the README.
+- [x] Record the measured cold-start times and the 1.6 memory peak in `docs/deployment.md`.
+- [x] **Rollback notes:**
   - Render: redeploy a previous commit from the dashboard.
   - Vercel: use Instant Rollback to a previous deployment.
   - Supabase migrations are **additive only**. Never edit an applied migration; add a new `000N_*.sql`.
-- Set a monthly reminder to re-check the `:free` slugs, since models disappear without notice.
+- [x] Set a monthly reminder to re-check the `:free` slugs, since models disappear without notice.
 
 ---
 
@@ -288,8 +288,8 @@ Each item is problem · evidence · fix · verify, the same format as `updates.m
   - [x] 1.5 Keep-alive hardened
   - [x] 1.6 Memory measured under 512 MB
 - [x] **Phase 2: Supabase** provisioned, RLS verified, bucket, invite-only auth, JWKS, seeded
-- [ ] **Phase 3: Render** deployed, health checks green, test tokens rejected
-- [ ] **Phase 4: Vercel** deployed, no secrets in bundle, CORS and redirect URLs finalized
-- [ ] **Phase 5: GitHub** secrets set, keep-alive run green
-- [ ] **Phase 6: Smoke test** checklist complete
-- [ ] **Phase 7: Post-deploy** README, measurements, rollback notes
+- [x] **Phase 3: Render** deployed, health checks green, test tokens rejected
+- [x] **Phase 4: Vercel** deployed, no secrets in bundle, CORS and redirect URLs finalized
+- [x] **Phase 5: GitHub** secrets set, keep-alive run green
+- [x] **Phase 6: Smoke test** checklist complete
+- [x] **Phase 7: Post-deploy** README, measurements, rollback notes

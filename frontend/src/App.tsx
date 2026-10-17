@@ -278,6 +278,7 @@ export function App() {
           console.log(`Uploaded ${filename}`);
         }}
         token={token}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
       <PreviewModal
@@ -320,8 +321,8 @@ export function App() {
         }}
         onContinueDemo={() => {
           setIsDemoMode(true);
-          setUserEmail('demo@enterprise.ai');
-          setToken('test-token-00000000-0000-0000-0000-000000000001');
+          setUserEmail(null);
+          setToken(undefined);
           loadDocuments();
         }}
       />

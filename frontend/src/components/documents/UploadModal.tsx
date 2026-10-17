@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { AlertTriangle, FileUp, Loader2, Upload, X } from 'lucide-react';
+import { AlertTriangle, FileUp, Info, Loader2, Upload, X } from 'lucide-react';
 import { api, ApiError } from '../../lib/api';
 
 interface UploadModalProps {
@@ -7,6 +7,7 @@ interface UploadModalProps {
   onClose: () => void;
   onUploadSuccess: (filename: string) => void;
   token?: string;
+  onOpenAuth?: () => void;
 }
 
 const ACCEPTED_EXTENSIONS = ['.pdf', '.txt', '.md', '.markdown', '.docx'];
@@ -17,6 +18,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   onClose,
   onUploadSuccess,
   token,
+  onOpenAuth,
 }) => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -64,6 +66,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!token) {
+      setError('Please sign in with an invited reviewer account to upload documents.');
+      return;
+    }
     if (!file) {
       setError('Please select a file to upload.');
       return;
@@ -117,6 +123,30 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          {!token && (
+            <div className="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900 flex items-start space-x-2.5">
+              <Info className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" />
+              <div className="leading-relaxed flex-1">
+                <p className="font-semibold text-indigo-950">Reviewer Account Required</p>
+                <p className="mt-0.5">
+                  Document uploads require an invited reviewer account to protect free-tier storage and ingestion quotas. In Demo Mode, you can query and explore all pre-seeded documents without an account.
+                </p>
+                {onOpenAuth && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenAuth();
+                    }}
+                    className="mt-2.5 inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors"
+                  >
+                    <span>Sign In to Upload</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Data handling disclaimer mandated by AGENTS.md §13 & §14 */}
           <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200/80 text-xs text-amber-900 flex items-start space-x-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
@@ -178,7 +208,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={!file || isUploading}
+              disabled={!file || isUploading || !token}
               className="inline-flex items-center space-x-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors"
             >
               {isUploading ? (

@@ -98,4 +98,3 @@ def test_meta_commentary_stripped_and_exempt():
     assert len(res.citations) == 1
     assert "Word count" not in res.answer
     assert "All sentences include" not in res.answer
-

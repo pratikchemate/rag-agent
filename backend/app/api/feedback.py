@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.auth import AuthenticatedUser, get_current_user_optional
 from app.core.errors import BadRequestError
 from app.core.logging import get_logger
 from app.db.engine import get_db
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/feedback", tags=["Feedback"])
 @router.post("", response_model=FeedbackResponse, status_code=status.HTTP_201_CREATED)
 def submit_feedback(
     payload: FeedbackCreate,
-    user: AuthenticatedUser = Depends(get_current_user),
+    user: AuthenticatedUser = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """Record user rating and optional comment for a chat answer."""

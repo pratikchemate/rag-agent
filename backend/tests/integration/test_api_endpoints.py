@@ -25,10 +25,25 @@ def test_health_endpoints(client):
 
 
 def test_unauthenticated_request_rejected(client):
-    """Verify protected endpoints return 401 when unauthenticated."""
-    resp = client.get("/api/v1/documents")
-    assert resp.status_code == 401
-    assert resp.json()["code"] == "unauthorized"
+    """Verify write endpoints require authentication (401) while GET returns public docs."""
+    # Upload requires authentication
+    content = b"Sample upload content"
+    upload_resp = client.post(
+        "/api/v1/documents",
+        files={"file": ("unauth.txt", io.BytesIO(content), "text/plain")},
+    )
+    assert upload_resp.status_code == 401
+    assert upload_resp.json()["code"] == "unauthorized"
+
+    # Delete requires authentication
+    delete_resp = client.delete(f"/api/v1/documents/{uuid.uuid4()}")
+    assert delete_resp.status_code == 401
+    assert delete_resp.json()["code"] == "unauthorized"
+
+    # GET /documents allows unauthenticated demo access and returns 200 list
+    list_resp = client.get("/api/v1/documents")
+    assert list_resp.status_code == 200
+    assert isinstance(list_resp.json(), list)
 
 
 def test_upload_and_list_documents(client, auth_headers_user_a):
@@ -401,4 +416,3 @@ async def test_lifespan_recovers_stale_processing_documents(db_session):
     assert fresh_doc is not None
     assert fresh_doc[0] == "processing"
     assert fresh_doc[1] is None
-

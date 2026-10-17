@@ -113,18 +113,18 @@ MIN_RETRIEVAL_SIMILARITY=0.50
 # EVIDENCE_SCORE_GAP_MIN=0.05
 
 # CORS Allowed Origins
-CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app,http://localhost:5173
+CORS_ALLOWED_ORIGINS=https://enterprise-knowledge-ai.vercel.app,https://enterprise-knowledge-ai-pratikchemates-projects.vercel.app,http://localhost:5173
 ```
 
 ### Frontend Configuration (`frontend/.env`)
 
 ```bash
 # Backend REST API URL
-VITE_API_BASE_URL=https://<your-backend-service>.onrender.com/api/v1
+VITE_API_BASE_URL=https://enterprise-knowledge-ai-api.onrender.com/api/v1
 
 # Supabase Auth Configuration (Public Anon Key ONLY)
-VITE_SUPABASE_URL=https://<project-ref>.supabase.co
-VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
+VITE_SUPABASE_URL=https://gbsuhiqzufxfbuwukeei.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdic3VoaXF6dWZ4ZmJ1d3VrZWVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxMzk5ODYsImV4cCI6MjEwNzcxNTk4Nn0.o-TaiwNo4eJ2DSLtL9J1-N7ZgHgyW8adAK6_8qiWxaA
 ```
 
 > **Security Rule:** Never put `SUPABASE_SECRET_KEY` or `OPENROUTER_API_KEY` into frontend environment files.
@@ -143,11 +143,30 @@ VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
    - **Readiness Probe:** `/api/v1/health/ready` (Validates database connection readiness)
 
 3. **Supabase & Backend Keep-Alive Workflow:**
-   - `.github/workflows/keepalive.yml` runs every Monday and Thursday to ping Supabase REST and backend readiness probes, preventing project pause due to inactivity.
+   - `.github/workflows/keepalive.yml` runs every Monday and Thursday to ping Supabase REST (`/rest/v1/documents?select=id&limit=1`) and backend readiness probes, preventing project pause due to inactivity.
+
+4. **Measured Production Latency & Headroom:**
+   - **Cold Start (Render Free spin-down after 15m idle):** ~50–70s initial spin-up.
+   - **Warm Liveness Probe (`/api/v1/health/live`):** ~100–200ms.
+   - **Conversational Greeting (`"hi"`, `"hello"`):** ~2ms (fast-path shortcut bypassing retrieval/LLM).
+   - **Warm Grounded RAG Query:** ~5–6s total (retrieval ~760ms, OpenRouter LLM generation ~4.3s).
+   - **Memory Footprint:** Peak RSS ~410–445MB during batch chunking (300 chunks with `EMBEDDING_BATCH_SIZE=8`), retaining safe headroom below Render's 512MB limit.
 
 ---
 
-## 6. Cost Statement & Known Limitations
+## 6. Rollback Runbooks & Operational Maintenance
+
+### Rollback Procedures
+- **Render Backend:** Navigate to the Render Dashboard (`enterprise-knowledge-ai-api`), select **Deploys**, and roll back to the previously verified successful build.
+- **Vercel Frontend:** In the Vercel Dashboard for `enterprise-knowledge-ai`, open the **Deployments** tab and trigger an Instant Rollback to the previous deployment.
+- **Supabase Database:** Database migrations are strictly additive. Never modify an existing applied migration in production; apply a compensating migration `000N_*.sql`.
+
+### Operational Maintenance
+- **OpenRouter Free Model Availability:** Community `:free` model slugs fluctuate over time. Set a monthly calendar reminder to query `GET https://openrouter.ai/api/v1/models` and update `OPENROUTER_MODELS` in Render environment variables without requiring code redeployments.
+
+---
+
+## 7. Cost Statement & Known Limitations
 
 - **Cost Statement:** Designed for free tiers; actual availability and quotas depend on provider terms and usage. An optional small credit balance on OpenRouter can raise rate limits and stability without altering code architecture.
 - **Single-Turn Chat:** Multi-turn conversational memory is omitted to prevent session-drift and context window exhaustion on free models.

@@ -30,7 +30,7 @@ jobs:
         run: |
           if [ -n "$SUPABASE_URL" ]; then
             echo "Sending secondary keepalive request to Supabase REST endpoint..."
-            curl -s -f -H "apikey: $SUPABASE_ANON_KEY" "$SUPABASE_URL/rest/v1/"
+            curl -s -f -H "apikey: $SUPABASE_ANON_KEY" "$SUPABASE_URL/rest/v1/documents?select=id&limit=1"
           else
             echo "SUPABASE_URL secret is not configured; skipping secondary ping."
           fi
