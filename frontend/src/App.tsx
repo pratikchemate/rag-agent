@@ -12,6 +12,33 @@ import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { ChatMessage, Citation, DocumentItem } from './types';
 
 export function App() {
+  // Theme state: dark / light
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    try {
+      localStorage.setItem('theme', theme);
+    } catch {
+      // ignore
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
+
   // Auth state
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [token, setToken] = useState<string | undefined>(undefined);
@@ -23,16 +50,40 @@ export function App() {
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
   const [isLoadingDocs, setIsLoadingDocs] = useState(false);
 
+  // Sidebar retraction state
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => !prev);
+  };
+
+  // Keyboard shortcut Ctrl+B / Cmd+B for sidebar toggle
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        if (window.innerWidth < 1024) {
+          setIsSidebarMobileOpen((prev) => !prev);
+        } else {
+          toggleSidebarCollapse();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const chatAbortRef = useRef<AbortController | null>(null);
 
   // Modals & Panels state
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [previewDocId, setPreviewDocId] = useState<string | null>(null);
   const [activeCitation, setActiveCitation] = useState<Citation | null>(null);
   const [feedbackState, setFeedbackState] = useState<{ id: string; rating: number } | null>(null);
-  const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
 
   // Initialize Auth
   useEffect(() => {
@@ -121,35 +172,17 @@ export function App() {
 
     try {
       await api.deleteDocument(id, token);
-      setDocuments((prev) => prev.filter((d) => d.id !== id));
-      setSelectedDocIds((prev) => prev.filter((d) => d !== id));
+      setSelectedDocIds((prev) => prev.filter((docId) => docId !== id));
+      await loadDocuments();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete document.');
+      alert(`Failed to delete document: ${err.message || 'Unknown error'}`);
     }
   };
 
-  // Ref to abort ongoing chat requests
-  const chatAbortRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (chatAbortRef.current) {
-        chatAbortRef.current.abort();
-      }
-    };
-  }, []);
-
-  // Handle Send Chat Message
+  // Handle Chat Message
   const handleSendMessage = async (question: string) => {
-    if (chatAbortRef.current) {
-      chatAbortRef.current.abort();
-    }
-    const abortController = new AbortController();
-    chatAbortRef.current = abortController;
-
-    const userMsgId = 'user-' + Date.now();
     const userMsg: ChatMessage = {
-      id: userMsgId,
+      id: 'user-' + Date.now(),
       sender: 'user',
       text: question,
       timestamp: new Date(),
@@ -158,22 +191,24 @@ export function App() {
     setMessages((prev) => [...prev, userMsg]);
     setIsChatLoading(true);
 
+    const abortController = new AbortController();
+    chatAbortRef.current = abortController;
+
     try {
-      const response = await api.sendChatMessage(
+      const res = await api.sendChatMessage(
         question,
-        selectedDocIds.length > 0 ? selectedDocIds : undefined,
+        selectedDocIds,
         token,
         abortController.signal
       );
 
       const assistantMsg: ChatMessage = {
-        id: response.request_id,
+        id: res.request_id,
         sender: 'assistant',
-        text: response.answer,
-        abstained: response.abstained,
-        citations: response.citations,
-        retrieval: response.retrieval,
-        timings_ms: response.timings_ms,
+        text: res.answer,
+        citations: res.citations,
+        abstained: res.abstained,
+        timings_ms: res.timings_ms,
         timestamp: new Date(),
       };
 
@@ -182,7 +217,8 @@ export function App() {
       if (err?.name === 'AbortError') {
         return;
       }
-      let errorText = 'An unexpected error occurred while processing your request.';
+
+      let errorText = 'An unexpected error occurred while communicating with the agent.';
       let code = 'unknown_error';
       let resetAt: string | undefined;
 
@@ -236,15 +272,19 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased">
       <Header
         userEmail={userEmail}
         isDemoMode={isDemoMode}
         onOpenAuth={() => setIsAuthOpen(true)}
         onSignOut={handleSignOut}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        isSidebarCollapsed={isSidebarCollapsed}
+        onToggleSidebarCollapse={toggleSidebarCollapse}
       />
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         <DocumentSidebar
           documents={documents}
           selectedDocIds={selectedDocIds}
@@ -257,9 +297,11 @@ export function App() {
           isLoading={isLoadingDocs}
           isOpenMobile={isSidebarMobileOpen}
           onCloseMobile={() => setIsSidebarMobileOpen(false)}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebarCollapse}
         />
 
-        <main className="flex-1 flex flex-col min-w-0">
+        <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
           <ChatArea
             messages={messages}
             onSendMessage={handleSendMessage}
@@ -268,7 +310,13 @@ export function App() {
             onClearDocSelection={() => setSelectedDocIds([])}
             onOpenCitation={(citation) => setActiveCitation(citation)}
             onOpenFeedback={(requestId, rating) => setFeedbackState({ id: requestId, rating })}
-            onToggleSidebar={() => setIsSidebarMobileOpen((prev) => !prev)}
+            onToggleSidebar={() => {
+              if (window.innerWidth < 1024) {
+                setIsSidebarMobileOpen((prev) => !prev);
+              } else {
+                toggleSidebarCollapse();
+              }
+            }}
             onClearMessages={() => setMessages([])}
             onStopGeneration={() => {
               if (chatAbortRef.current) {
@@ -276,6 +324,7 @@ export function App() {
                 setIsChatLoading(false);
               }
             }}
+            isSidebarCollapsed={isSidebarCollapsed}
           />
         </main>
       </div>

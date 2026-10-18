@@ -46,7 +46,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({
                   }\n\n"${citation.excerpt.slice(0, 160)}..."`
                 : 'Unverified source'
             }
-            className="inline-flex items-center gap-0.5 mx-0.5 px-1.5 py-0.5 rounded-md text-[11px] font-bold font-mono bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-900 border border-indigo-200/80 hover:border-indigo-300 transition-all cursor-pointer shadow-2xs group align-baseline"
+            className="inline-flex items-center gap-0.5 mx-0.5 px-1.5 py-0.5 rounded-md text-[11px] font-bold font-mono bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-pointer shadow-2xs group align-baseline"
           >
             <span>{token.label}</span>
           </button>
@@ -55,7 +55,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({
 
       if (token.type === 'bold') {
         return (
-          <strong key={key} className="font-semibold text-slate-900">
+          <strong key={key} className="font-semibold text-slate-900 dark:text-slate-100">
             {token.content}
           </strong>
         );
@@ -65,7 +65,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({
         return (
           <code
             key={key}
-            className="px-1.5 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-indigo-700 font-mono text-[12px]"
+            className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-indigo-700 dark:text-indigo-300 font-mono text-[12px]"
           >
             {token.content}
           </code>
@@ -79,26 +79,26 @@ export const MessageContent: React.FC<MessageContentProps> = ({
   const blocks: ContentBlock[] = parseMarkdownBlocks(text);
 
   return (
-    <div className="space-y-3 text-[13.5px] leading-relaxed text-slate-800">
+    <div className="space-y-3 text-[13.5px] leading-relaxed text-slate-800 dark:text-slate-200">
       {blocks.map((block, idx) => {
         if (block.type === 'header') {
           const inlineTokens = parseInlineTokens(block.text);
           if (block.level === 1) {
             return (
-              <h3 key={idx} className="text-base font-bold text-slate-900 pt-2 pb-1 border-b border-slate-100">
+              <h3 key={idx} className="text-base font-bold text-slate-900 dark:text-slate-100 pt-2 pb-1 border-b border-slate-100 dark:border-slate-800">
                 {renderInline(inlineTokens, `h1-${idx}`)}
               </h3>
             );
           }
           if (block.level === 2) {
             return (
-              <h4 key={idx} className="text-sm font-bold text-slate-900 pt-1">
+              <h4 key={idx} className="text-sm font-bold text-slate-900 dark:text-slate-100 pt-1">
                 {renderInline(inlineTokens, `h2-${idx}`)}
               </h4>
             );
           }
           return (
-            <h5 key={idx} className="text-[13px] font-semibold text-slate-900 uppercase tracking-wide text-indigo-900 pt-1">
+            <h5 key={idx} className="text-[13px] font-semibold text-indigo-900 dark:text-indigo-400 uppercase tracking-wide pt-1">
               {renderInline(inlineTokens, `h3-${idx}`)}
             </h5>
           );
@@ -122,13 +122,13 @@ export const MessageContent: React.FC<MessageContentProps> = ({
 
         if (block.type === 'code') {
           return (
-            <div key={idx} className="relative rounded-xl overflow-hidden bg-slate-900 border border-slate-800 text-slate-100 my-3 group">
-              <div className="flex items-center justify-between px-3.5 py-1.5 bg-slate-800/80 border-b border-slate-700/60 text-[11px] font-mono text-slate-400">
+            <div key={idx} className="relative rounded-xl overflow-hidden bg-slate-900 dark:bg-slate-950 border border-slate-800 text-slate-100 my-3 group">
+              <div className="flex items-center justify-between px-3.5 py-1.5 bg-slate-800/80 dark:bg-slate-900/80 border-b border-slate-700/60 text-[11px] font-mono text-slate-400">
                 <span>{block.language || 'code'}</span>
                 <button
                   type="button"
                   onClick={() => handleCopyCode(block.code, idx)}
-                  className="flex items-center gap-1 hover:text-white transition-colors"
+                  className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
                   title="Copy code"
                 >
                   {copiedCodeIndex === idx ? (
