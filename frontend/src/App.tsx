@@ -63,10 +63,10 @@ export function App() {
 
       return () => subscription.unsubscribe();
     } else {
-      // Offline / dev mode default
+      // Unconfigured / offline fallback defaults to guest demo mode
       setIsDemoMode(true);
-      setUserEmail('demo@enterprise.ai');
-      setToken('test-token-00000000-0000-0000-0000-000000000001');
+      setUserEmail(null);
+      setToken(undefined);
     }
   }, []);
 
@@ -211,17 +211,27 @@ export function App() {
   };
 
   const handleSignOut = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
-    if (!isSupabaseConfigured) {
-      setUserEmail('demo@enterprise.ai');
-      setToken('test-token-00000000-0000-0000-0000-000000000001');
-      setIsDemoMode(true);
-    } else {
+    try {
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
+    } catch (err) {
+      console.error('Error during Supabase sign-out:', err);
+    } finally {
       setUserEmail(null);
       setToken(undefined);
       setIsDemoMode(true);
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('sb-') || key.includes('supabase'))) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch {
+        // ignore
+      }
+      loadDocuments();
     }
   };
 
