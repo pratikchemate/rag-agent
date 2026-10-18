@@ -85,6 +85,21 @@ def deploy():
                 "size": size
             })
 
+    # Include vercel.json for rewrites and clean routing
+    vercel_json_path = os.path.abspath("frontend/vercel.json")
+    if os.path.exists(vercel_json_path):
+        with open(vercel_json_path, "rb") as fp:
+            v_content = fp.read()
+        v_size = len(v_content)
+        v_digest = hashlib.sha1(v_content).hexdigest()
+        print(f"Uploading vercel.json ({v_size} bytes, sha1: {v_digest[:8]}...)...")
+        upload_file(token, "vercel.json", v_content, v_digest)
+        deployment_files.append({
+            "file": "vercel.json",
+            "sha": v_digest,
+            "size": v_size
+        })
+
     print(f"Uploaded {len(deployment_files)} files. Creating deployment...")
     payload = {
         "name": "enterprise-knowledge-ai",

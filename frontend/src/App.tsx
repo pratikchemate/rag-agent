@@ -71,10 +71,11 @@ export function App() {
   }, []);
 
   // Fetch Documents
-  const loadDocuments = useCallback(async (signal?: AbortSignal) => {
+  const loadDocuments = useCallback(async (signal?: unknown) => {
     setIsLoadingDocs(true);
     try {
-      const docs = await api.fetchDocuments(token, signal);
+      const validSignal = signal instanceof AbortSignal ? signal : undefined;
+      const docs = await api.fetchDocuments(token, validSignal);
       setDocuments(docs);
     } catch (err: any) {
       if (err?.name !== 'AbortError') {
@@ -242,7 +243,7 @@ export function App() {
           onOpenUpload={() => setIsUploadOpen(true)}
           onOpenPreview={(id) => setPreviewDocId(id)}
           onDeleteDocument={handleDeleteDocument}
-          onRefresh={loadDocuments}
+          onRefresh={() => loadDocuments()}
           isLoading={isLoadingDocs}
           isOpenMobile={isSidebarMobileOpen}
           onCloseMobile={() => setIsSidebarMobileOpen(false)}
@@ -273,9 +274,8 @@ export function App() {
       <UploadModal
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
-        onUploadSuccess={(filename) => {
+        onUploadSuccess={(_filename) => {
           loadDocuments();
-          console.log(`Uploaded ${filename}`);
         }}
         token={token}
         onOpenAuth={() => setIsAuthOpen(true)}

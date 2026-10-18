@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ApiError } from './api';
+import { ApiError, cleanSignal, resolveApiBaseUrl } from './api';
 
 describe('ApiError and Client Configuration', () => {
   it('instantiates ApiError with appropriate status and error code', () => {
@@ -24,5 +24,20 @@ describe('ApiError and Client Configuration', () => {
     expect(error.code).toBe('error');
     expect(error.status).toBe(500);
     expect(error.resetAt).toBeUndefined();
+  });
+
+  it('sanitizes signal correctly, ignoring non-AbortSignal arguments like MouseEvents', () => {
+    const controller = new AbortController();
+    expect(cleanSignal(controller.signal)).toBe(controller.signal);
+    expect(cleanSignal(undefined)).toBeUndefined();
+    expect(cleanSignal(null)).toBeUndefined();
+    expect(cleanSignal({ type: 'click' })).toBeUndefined();
+    expect(cleanSignal('invalid-signal')).toBeUndefined();
+  });
+
+  it('resolves API base URL fallback correctly', () => {
+    const url = resolveApiBaseUrl();
+    expect(typeof url).toBe('string');
+    expect(url.length).toBeGreaterThan(0);
   });
 });
