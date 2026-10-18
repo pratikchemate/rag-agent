@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { AlertTriangle, FileUp, Info, Loader2, Upload, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle, FileUp, Info, Loader2, Upload, X } from 'lucide-react';
 import { api, ApiError } from '../../lib/api';
 
 interface UploadModalProps {
@@ -22,6 +22,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 }) => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -43,11 +44,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     onClose();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const validateAndSetFile = (selectedFile: File) => {
     setError(null);
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
     const extension = '.' + selectedFile.name.split('.').pop()?.toLowerCase();
     if (!ACCEPTED_EXTENSIONS.includes(extension)) {
       setError(`Unsupported file format. Please upload ${ACCEPTED_EXTENSIONS.join(', ')}`);
@@ -64,10 +62,26 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     setFile(selectedFile);
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      validateAndSetFile(selectedFile);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile) {
+      validateAndSetFile(droppedFile);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) {
-      setError('Please sign in with an invited reviewer account to upload documents.');
+      setError('Please sign in with a reviewer or registered account to upload documents.');
       return;
     }
     if (!file) {
@@ -104,19 +118,22 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
       <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center border border-brand-200/60">
               <Upload className="w-4 h-4" />
             </div>
-            <h2 className="text-lg font-bold text-slate-900">Upload Document</h2>
+            <div>
+              <h2 className="text-base font-bold text-slate-900">Upload Knowledge Document</h2>
+              <p className="text-xs text-slate-500 font-medium">Automatic extraction, chunking, and vector embedding</p>
+            </div>
           </div>
           <button
             onClick={handleClose}
             disabled={isUploading}
-            className="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors"
+            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -124,12 +141,12 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           {!token && (
-            <div className="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900 flex items-start space-x-2.5">
-              <Info className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-xl bg-brand-50/70 border border-brand-200/80 text-xs text-brand-900 flex items-start space-x-2.5">
+              <Info className="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5" />
               <div className="leading-relaxed flex-1">
-                <p className="font-semibold text-indigo-950">Reviewer Account Required</p>
-                <p className="mt-0.5">
-                  Document uploads require an invited reviewer account to protect free-tier storage and ingestion quotas. In Demo Mode, you can query and explore all pre-seeded documents without an account.
+                <p className="font-bold text-brand-950">Reviewer Account Required</p>
+                <p className="mt-0.5 text-slate-600">
+                  Document uploads require an authenticated reviewer account to protect free-tier storage and ingestion quotas. In Demo Mode, you can query and explore all 4 pre-seeded documents without an account.
                 </p>
                 {onOpenAuth && (
                   <button
@@ -138,7 +155,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       onClose();
                       onOpenAuth();
                     }}
-                    className="mt-2.5 inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors"
+                    className="mt-2.5 inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-xs transition-colors cursor-pointer"
                   >
                     <span>Sign In to Upload</span>
                   </button>
@@ -147,20 +164,32 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             </div>
           )}
 
-          {/* Data handling disclaimer mandated by AGENTS.md §13 & §14 */}
-          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200/80 text-xs text-amber-900 flex items-start space-x-2.5">
+          {/* Data handling disclaimer */}
+          <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200/80 text-xs text-amber-900 flex items-start space-x-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
             <div className="leading-relaxed">
-              <p className="font-semibold text-amber-950">Free-Tier Data Handling Disclosure</p>
-              <p className="mt-0.5">
+              <p className="font-bold text-amber-950">Free-Tier Data Handling Disclosure</p>
+              <p className="mt-0.5 text-amber-800 text-[11px]">
                 Model providers routed via OpenRouter free tier may log prompts/completions for abuse monitoring. Please upload public or synthetic documents only. Do not upload confidential or personal data.
               </p>
             </div>
           </div>
 
           <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragOver(true);
+            }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-slate-300 hover:border-indigo-500 rounded-xl p-6 text-center cursor-pointer transition-all bg-slate-50 hover:bg-indigo-50/20"
+            className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
+              isDragOver
+                ? 'border-brand-500 bg-brand-50/60 scale-[1.01]'
+                : file
+                ? 'border-emerald-300 bg-emerald-50/20'
+                : 'border-slate-300 hover:border-brand-500 bg-slate-50/70 hover:bg-brand-50/20'
+            }`}
           >
             <input
               ref={fileInputRef}
@@ -169,19 +198,25 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               onChange={handleFileChange}
               className="hidden"
             />
-            <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mx-auto text-indigo-600 mb-3 border border-slate-200">
-              <FileUp className="w-6 h-6" />
+            <div
+              className={`w-12 h-12 rounded-2xl shadow-xs flex items-center justify-center mx-auto mb-3 border ${
+                file
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                  : 'bg-white border-slate-200 text-brand-600'
+              }`}
+            >
+              {file ? <CheckCircle className="w-6 h-6" /> : <FileUp className="w-6 h-6" />}
             </div>
             {file ? (
               <div>
-                <p className="text-sm font-semibold text-slate-800">{file.name}</p>
-                <p className="text-xs text-slate-500 mt-1">
-                  {(file.size / (1024 * 1024)).toFixed(2)} MB
+                <p className="text-sm font-bold text-slate-800">{file.name}</p>
+                <p className="text-xs text-emerald-700 font-semibold mt-1">
+                  Ready to index • {(file.size / (1024 * 1024)).toFixed(2)} MB
                 </p>
               </div>
             ) : (
               <div>
-                <p className="text-sm font-medium text-slate-700">
+                <p className="text-sm font-semibold text-slate-700">
                   Click to select or drag and drop a file
                 </p>
                 <p className="text-xs text-slate-400 mt-1">
@@ -192,32 +227,32 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           </div>
 
           {error && (
-            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium">
               {error}
             </div>
           )}
 
-          <div className="flex items-center justify-end space-x-3 pt-3">
+          <div className="flex items-center justify-end space-x-3 pt-2">
             <button
               type="button"
               onClick={onClose}
               disabled={isUploading}
-              className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!file || isUploading || !token}
-              className="inline-flex items-center space-x-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors"
+              className="inline-flex items-center space-x-2 px-4 py-2.5 text-xs font-semibold text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
             >
               {isUploading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Processing...</span>
+                  <span>Processing & Indexing...</span>
                 </>
               ) : (
-                <span>Upload Document</span>
+                <span>Upload & Ingest</span>
               )}
             </button>
           </div>
