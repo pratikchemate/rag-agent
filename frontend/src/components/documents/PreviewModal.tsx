@@ -61,7 +61,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
       <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-3xl w-full max-h-[88vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60">
               <BookOpen className="w-4 h-4" />
@@ -136,7 +136,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-slate-800 dark:text-slate-200 font-mono whitespace-pre-wrap leading-relaxed bg-white dark:bg-slate-900 p-3.5 rounded-lg border border-slate-200/90 dark:border-slate-750 shadow-2xs">
+                <div className="text-xs text-slate-800 dark:text-slate-200 font-mono whitespace-pre-wrap leading-relaxed bg-white dark:bg-slate-900 p-3.5 rounded-lg border border-slate-200/90 dark:border-slate-700 shadow-2xs">
                   {chunk.content}
                 </div>
               </div>
@@ -150,7 +150,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-850/50">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900">
           <span className="text-xs text-slate-500 dark:text-slate-400">
             {preview ? `Showing ${filteredChunks.length} of ${preview.total_chunks} chunks` : ''}
           </span>

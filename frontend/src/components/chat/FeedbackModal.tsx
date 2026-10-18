@@ -82,7 +82,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                   rating === 1
                     ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-500 text-emerald-800 dark:text-emerald-300 shadow-2xs ring-1 ring-emerald-500/20'
-                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
+                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
                 }`}
               >
                 <ThumbsUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -94,7 +94,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                   rating === -1
                     ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-500 text-rose-800 dark:text-rose-300 shadow-2xs ring-1 ring-rose-500/20'
-                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
+                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
                 }`}
               >
                 <ThumbsDown className="w-4 h-4 text-rose-600 dark:text-rose-400" />

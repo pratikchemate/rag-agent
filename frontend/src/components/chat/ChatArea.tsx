@@ -137,7 +137,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden bg-slate-50/70 dark:bg-slate-950/70">
       {/* Scope bar & Toggle */}
-      <div className="h-11 px-4 sm:px-6 border-b border-slate-200/80 dark:border-slate-800/80 glass-header flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 z-10 flex-shrink-0">
+      <div className="h-11 px-4 sm:px-6 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 z-10 flex-shrink-0">
         <div className="flex items-center space-x-2.5">
           {/* Mobile sidebar toggle button */}
           <button
@@ -363,7 +363,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                             <button
                               key={c.label}
                               onClick={() => onOpenCitation(c)}
-                              className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 hover:text-brand-800 dark:hover:text-brand-300 border border-slate-200 dark:border-slate-700 hover:border-brand-300 dark:hover:border-brand-600 transition-colors cursor-pointer group shadow-2xs"
+                              className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:text-brand-800 dark:hover:text-brand-300 border border-slate-200 dark:border-slate-700 hover:border-brand-300 dark:hover:border-brand-600 transition-colors cursor-pointer group shadow-2xs"
                               title={`View evidence chunk for ${c.filename}`}
                             >
                               <span className="font-mono text-brand-600 dark:text-brand-400 group-hover:text-brand-800 font-bold">
@@ -479,7 +479,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                   setInput(chip);
                   textareaRef.current?.focus();
                 }}
-                className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 hover:text-brand-800 dark:hover:text-brand-300 border border-slate-200/80 dark:border-slate-700 text-[11px] font-medium whitespace-nowrap transition-colors cursor-pointer"
+                className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-brand-800 dark:hover:text-brand-300 border border-slate-200/80 dark:border-slate-700 text-[11px] font-medium whitespace-nowrap transition-colors cursor-pointer"
               >
                 {chip}
               </button>
@@ -494,7 +494,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask a question about your knowledge base... (Enter to send, Shift+Enter for new line)"
-              className="w-full text-xs sm:text-[13px] pl-4 pr-24 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white dark:bg-slate-850 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none shadow-2xs leading-relaxed transition-all"
+              className="w-full text-xs sm:text-[13px] pl-4 pr-24 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none shadow-2xs leading-relaxed transition-all"
             />
 
             <div className="absolute right-2.5 bottom-2.5 flex items-center space-x-1.5">

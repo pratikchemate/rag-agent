@@ -29,7 +29,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center sm:justify-end p-4 sm:p-0 bg-slate-900/60 backdrop-blur-xs">
       <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-none sm:rounded-l-2xl max-w-md w-full h-[90vh] sm:h-full flex flex-col shadow-2xl border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-200">
         {/* Drawer Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900">
           <div className="flex items-center space-x-3">
             <span className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 text-white font-extrabold text-xs flex items-center justify-center shadow-xs shadow-brand-500/20 font-mono">
               {citation.label}
@@ -57,7 +57,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
         {/* Drawer Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* File Card */}
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-750 space-y-2">
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700 space-y-2">
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-semibold">
               <span className="flex items-center space-x-1.5">
                 <FileText className="w-4 h-4 text-brand-600 dark:text-brand-400" />
@@ -107,7 +107,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
           </div>
 
           {/* Integrity Guarantee Card */}
-          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-750 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 space-y-1">
             <p className="font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Grounded Evidence Pipeline</span>

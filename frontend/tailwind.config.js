@@ -12,6 +12,10 @@ export default {
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       colors: {
+        slate: {
+          750: '#253347',
+          850: '#131d2e',
+        },
         brand: {
           50: '#eef2ff',
           100: '#e0e7ff',

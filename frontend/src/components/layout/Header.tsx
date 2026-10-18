@@ -34,7 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSidebarCollapse,
 }) => {
   return (
-    <header className="h-16 border-b border-slate-200/90 dark:border-slate-800/90 glass-header px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs flex-shrink-0 transition-colors">
+    <header className="h-16 border-b border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs flex-shrink-0 transition-colors">
       {/* Brand & Sidebar Toggle */}
       <div className="flex items-center space-x-3 sm:space-x-4">
         {/* Sidebar Collapse Toggle */}

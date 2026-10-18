@@ -215,7 +215,7 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                 placeholder="Search documents by name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full text-xs pl-8 pr-8 py-2 rounded-xl border border-slate-200/90 dark:border-slate-750 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-slate-50/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all"
+                className="w-full text-xs pl-8 pr-8 py-2 rounded-xl border border-slate-200/90 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-slate-50/70 dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all"
               />
               {searchTerm && (
                 <button
@@ -282,7 +282,7 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                     className={`p-3 rounded-xl border transition-all text-xs group relative ${
                       isSelected
                         ? 'border-brand-500 bg-brand-50/40 dark:bg-brand-950/30 shadow-xs ring-1 ring-brand-500/20'
-                        : 'border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-2xs'
+                        : 'border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-800/90 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-2xs'
                     }`}
                   >
                     <div className="flex items-start space-x-2.5">
